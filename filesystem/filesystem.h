@@ -20,7 +20,7 @@
 #include "filesystem/crc.h"
 
 #define DEVICE_IMAGE "disk.dat" // Device name
-#define MAX_FILE_SIZE 2048      // Maximum file size, in bytes
+#define MAX_FILE_SIZE 10240      // Maximum file size, in bytes
 #define FS_SEEK_CUR 0
 #define FS_SEEK_END 1
 #define FS_SEEK_BEGIN 2

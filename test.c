@@ -22,7 +22,7 @@
 #define ANSI_COLOR_GREEN "\x1b[32m"
 #define ANSI_COLOR_BLUE "\x1b[34m"
 
-#define N_BLOCKS 25					  // Number of blocks in the device
+#define N_BLOCKS 250					  // Number of blocks in the device
 #define DEV_SIZE N_BLOCKS *BLOCK_SIZE // Device size, in bytes
 
 int main()

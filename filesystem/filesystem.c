@@ -15,13 +15,57 @@
 #include "filesystem/auxiliary.h"  // Headers for auxiliary functions
 #include "filesystem/metadata.h"   // Type and structure declaration of the file system
 
+//Inicializaciones de las estructuras a usar
+struct TipoSuperbloque superbloque;
+struct TipoInodoDisco inodo[NUMINODO];
+char i_map[BLOCK_SIZE] ; // Mapa de bits con los inodos     
+char b_map[BLOCK_SIZE] ; // Mapa de bits con los bloques 
+
 /*
  * @brief 	Generates the proper file system structure in a storage device, as designed by the student.
  * @return 	0 if success, -1 otherwise.
  */
 int mkFS(long deviceSize)
-{
-	return -1;
+{	
+	// El sistema sera usado en discos de entre 460KiB y 600KiB, tal y como se especifa en los requisitos
+	// Si queremos crear un disco fuera de los límites ERROR
+	
+	//printf("%ld", deviceSize);
+
+	if (deviceSize < 471040 || deviceSize > 614400) return -1;
+
+	//Inicializar valores por defecto
+	superbloque.numMagico = 100383511; 
+	superbloque.numInodos = NUMINODO;
+	superbloque.numBloquesMapaInodos = 1; // Un bloque es suficiente para almacenar 48 inodos
+    superbloque.numBloquesMapaDatos  = 1; // Un bloque es suficiente para almacenar los bloques correspondientes al tamanyo maximo de disco
+    superbloque.primerInodo          = 1;
+    superbloque.numBloquesDatos      = NUMBLOQUESDATO;
+    superbloque.primerBloqueDatos    = 48; // El primer bloque de datos estara despues de los inodos 
+
+	// Se rellenan los mapas de inodos y bloques a 0 (Free)
+	for (int i=0; i<superbloque.numInodos; i++) {
+        i_map[i] = 0; // free
+    }
+
+    for (int i=0; i<superbloque.numBloquesDatos; i++) {
+        b_map[i] = 0; // free
+    }	
+
+	// Se guardan los metadatos de deviceSize
+	superbloque.tamDispositivo = deviceSize;
+
+	/*Si finalmente hemos decidido meter INTEGRITY HAY QUE INICIARLIZARLO AQUÍ */
+	
+	// memset rellena con 0 tantas posiciones como sizeof(TipoInodoDisco) a partir de &(inodo[i]), es decir, rellena los inodos a 0
+	for (int i=0; i<superbloque.numInodos; i++) {
+        memset(&(inodo[i]), 0, sizeof(TipoInodoDisco) );  
+    }
+
+	// Se desmonta el dispositivo y control de ERROR
+	if (unmountFS() == -1) return -1;
+	j
+	return 0;
 }
 
 /*

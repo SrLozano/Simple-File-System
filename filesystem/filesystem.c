@@ -78,7 +78,7 @@ int mountFS(void)
 	// Bread traera al FS los bloques del disco que contenga los metadatos necesarios para montar el disco 
 	
 	// Leer bloque 0 de disco y guardarlo en superbloque
-	if (bread(DEVICE_IMAGE, 0, &superbloque) == -1) return -1;
+	if (bread(DEVICE_IMAGE, 0, (char *)&superbloque) == -1) return -1;
 
 	// Leer el bloque del mapa de inodos 
 	if (bread(DEVICE_IMAGE, 1, (char *)i_map) == -1) return -1;
@@ -107,7 +107,7 @@ int unmountFS(void)
 	// Brwrite copiara al disco los bloques que contengan los metadatos  
 	
 	// Escribir bloque 0 al disco 
-	if (bwrite(DEVICE_IMAGE, 0, &superbloque) == -1) return -1;
+	if (bwrite(DEVICE_IMAGE, 0, (char *)&superbloque) == -1) return -1;
 
 	// Escribir el bloque del mapa de inodos 
 	if (bwrite(DEVICE_IMAGE, 1, (char *)i_map) == -1) return -1;

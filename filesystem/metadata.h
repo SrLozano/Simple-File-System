@@ -56,8 +56,8 @@ typedef struct TipoInodoDisco{
 
 #define PADDING_INODO (BLOCK_SIZE - sizeof(TipoInodoDisco))
 
-typedef char  inodo_map[NUMINODO] ;          /* 100…0 (usado: i_map[x]=1 | libre: i_map[x]=0) */
-typedef char bloque_map[NUMBLOQUESDATO] ;    /* 000…0 (usado: b_map[x]=1 | libre: b_map[x]=0) */
+//typedef char  inodo_map[NUMINODO] ;          /* 100…0 (usado: i_map[x]=1 | libre: i_map[x]=0) */
+//typedef char bloque_map[NUMBLOQUESDATO] ;    /* 000…0 (usado: b_map[x]=1 | libre: b_map[x]=0) */
 
 /*
 typedef struct INode {

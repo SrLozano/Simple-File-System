@@ -1,4 +1,3 @@
-
 /*
  *
  * Operating System Design / Diseño de Sistemas Operativos
@@ -10,10 +9,12 @@
  *
  */
 
-
 #include "filesystem/filesystem.h" // Headers for the core functionality
 #include "filesystem/auxiliary.h"  // Headers for auxiliary functions
 #include "filesystem/metadata.h"   // Type and structure declaration of the file system
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
 
 //Inicializaciones de las estructuras a usar
 struct TipoSuperbloque superbloque;
@@ -61,10 +62,8 @@ int mkFS(long deviceSize)
 	for (int i=0; i<superbloque.numInodos; i++) {
         memset(&(inodo[i]), 0, sizeof(TipoInodoDisco) );  
     }
-
 	// Se desmonta el dispositivo y control de ERROR
 	if (unmountFS() == -1) return -1;
-	j
 	return 0;
 }
 
@@ -73,8 +72,28 @@ int mkFS(long deviceSize)
  * @return 	0 if success, -1 otherwise.
  */
 int mountFS(void)
-{
-	return -1;
+{	
+	/*¿DEBERÍAMOS METER UN FOR PARA GENERALIZAR?*/
+
+	// Bread traera al FS los bloques del disco que contenga los metadatos necesarios para montar el disco 
+	
+	// Leer bloque 0 de disco y guardarlo en superbloque
+	if (bread(DEVICE_IMAGE, 0, &superbloque) == -1) return -1;
+
+	// Leer el bloque del mapa de inodos 
+	if (bread(DEVICE_IMAGE, 1, (char *)i_map) == -1) return -1;
+	
+	// Lee el bloque para el mapa de bloques de datos
+	if (bread(DEVICE_IMAGE, 2, (char *)b_map) == -1) return -1;
+
+	// Leer los i-nodos de disco
+    for (int i=0; i<(superbloque.numInodos*sizeof(TipoInodoDisco)/BLOCK_SIZE); i++) {
+          if (bread(DEVICE_IMAGE, 3, ((char *)inodo + i*BLOCK_SIZE)) == -1) return -1;
+    }
+
+	// Se devuelve -1 en caso de error y 0 en caso de que la ejección sea correcta
+
+	return 0;
 }
 
 /*
@@ -83,7 +102,27 @@ int mountFS(void)
  */
 int unmountFS(void)
 {
-	return -1;
+	/*¿DEBERÍAMOS METER UN FOR PARA GENERALIZAR?*/
+
+	// Brwrite copiara al disco los bloques que contengan los metadatos  
+	
+	// Escribir bloque 0 al disco 
+	if (bwrite(DEVICE_IMAGE, 0, &superbloque) == -1) return -1;
+
+	// Escribir el bloque del mapa de inodos 
+	if (bwrite(DEVICE_IMAGE, 1, (char *)i_map) == -1) return -1;
+	
+	// Escribir el bloque para el mapa de bloques de datos
+	if (bwrite(DEVICE_IMAGE, 2, (char *)b_map) == -1) return -1;
+
+	// Escribir los i-nodos a disco 
+    for (int i=0; i<(superbloque.numInodos*sizeof(TipoInodoDisco)/BLOCK_SIZE); i++) {
+          if (bwrite(DEVICE_IMAGE, 3, ((char *)inodo + i*BLOCK_SIZE)) == -1) return -1;
+    }
+
+	// Se devuelve -1 en caso de error y 0 en caso de que la ejección sea correcta
+
+	return 0;
 }
 
 /*

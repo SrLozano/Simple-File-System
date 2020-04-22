@@ -1,4 +1,3 @@
-
 /*
  *
  * Operating System Design / Diseño de Sistemas Operativos
@@ -20,7 +19,7 @@ static inline void bitmap_setbit(char *bitmap_, int i_, int val_) {
 }
 
 #define MAX_FILES 48
-#define MAX_LENGHT 32
+#define MAX_LENGHT 32 //Máxima longitud para el nombre de un fichero y enlace simbólico
 #define MAX_FILE_SIZE 10240
 #define BLOCK_SIZE 2048
 #define OPEN 1
@@ -29,7 +28,7 @@ static inline void bitmap_setbit(char *bitmap_, int i_, int val_) {
 struct INode;
 struct Superblock;
 
-#define NUMINODO 48 //Habra tantos inodos como archivos sea capaz de soportar el sistema
+#define NUMINODO 48 //Habrá tantos inodos como archivos sea capaz de soportar el sistema
 #define NUMBLOQUESDATO 20
 
 typedef struct TipoSuperbloque{
@@ -41,20 +40,26 @@ typedef struct TipoSuperbloque{
     unsigned int numBloquesDatos;           /* Número de bloques de datos en el disp. */
     unsigned int primerBloqueDatos;         /* Número de bloque del 1º bloque de datos */
     unsigned int tamDispositivo;	    /* Tamaño total del disp. (en bytes) */
-    char relleno[BLOCK_SIZE-8*sizeof(int)]; /* Campo de relleno (para completar un bloque) */
+    char relleno[BLOCK_SIZE-8*sizeof(int)]; /* Campo de relleno (para completar un bloque entero en el superbloque) */
 } TipoSuperbloque;
 
 typedef struct TipoInodoDisco{
     unsigned int tipo;	                  /* T_FICHERO o T_DIRECTORIO */
     char nombre[MAX_LENGHT];	                  /* Nombre del fichero/ directorio asociado */
-    //unsigned int inodosContenidos[200];   /* tipo==dir: lista de los inodos del directorio */
+    
+    /*¿POR QUÉ ES 200?, HAY QUE REVISARLO, ¿ESTÁ EN LOS REQUISITOS?*/
+    unsigned int inodosContenidos[200];   /* tipo==dir: lista de los inodos del directorio */
+    
     unsigned int size;	                  /* Tamaño actual del fichero en bytes */
     unsigned int bloqueDirecto;	          /* Número del bloque directo */
     unsigned int bloqueIndirecto;	  /* Número del bloque indirecto */
+    
+    /*ESTE CAMPO DE RELLENO DEPENDE DE CÓMO DEFINAMOS LO ANTERIOR Y AÚN NO ESTA CLARO ASÍ QUE HAY QUE REPENSARLO*/
     char relleno[BLOCK_SIZE-204*sizeof(int)-200]; /* Campo relleno para llenar un bloque */
+
 } TipoInodoDisco;
 
-#define PADDING_INODO (BLOCK_SIZE - sizeof(TipoInodoDisco))
+//#define PADDING_INODO (BLOCK_SIZE - sizeof(TipoInodoDisco))
 
 //typedef char  inodo_map[NUMINODO] ;          /* 100…0 (usado: i_map[x]=1 | libre: i_map[x]=0) */
 //typedef char bloque_map[NUMBLOQUESDATO] ;    /* 000…0 (usado: b_map[x]=1 | libre: b_map[x]=0) */

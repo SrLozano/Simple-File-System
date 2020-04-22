@@ -17,10 +17,21 @@
 #include <string.h>
 
 //Inicializaciones de las estructuras a usar
-struct TipoSuperbloque superbloque;
-struct TipoInodoDisco inodo[NUMINODO];
-char i_map[BLOCK_SIZE] ; // Mapa de bits con los inodos     
-char b_map[BLOCK_SIZE] ; // Mapa de bits con los bloques 
+TipoSuperbloque superbloque[1]; //Array de structs (typedef, hemos definido el tipo de Tiposuperbloque[0]) para distintos FS
+TipoInodoDisco inodos[NUMINODO];
+char i_map[NUMINODO] ; // Mapa de bits con los inodos (usado: i_map[x]=1 | libre: i_map[x]=0)    
+char b_map[NUMBLOQUESDATO] ; // Mapa de bits con los bloques (usado: b_map[x]=1 | libre: b_map[x]=0)
+
+struct //Información extra de apoyo
+
+{
+	//Nos indica por cada inodo si está abierto y en qué posición está en caso de que esté abierto.
+	int posicion;
+	int abierto;
+
+} inodosx[NUMINODO];
+
+
 
 /*
  * @brief 	Generates the proper file system structure in a storage device, as designed by the student.
@@ -36,31 +47,31 @@ int mkFS(long deviceSize)
 	if (deviceSize < 471040 || deviceSize > 614400) return -1;
 
 	//Inicializar valores por defecto
-	superbloque.numMagico = 100383511; 
-	superbloque.numInodos = NUMINODO;
-	superbloque.numBloquesMapaInodos = 1; // Un bloque es suficiente para almacenar 48 inodos
-    superbloque.numBloquesMapaDatos  = 1; // Un bloque es suficiente para almacenar los bloques correspondientes al tamanyo maximo de disco
-    superbloque.primerInodo          = 1;
-    superbloque.numBloquesDatos      = NUMBLOQUESDATO;
-    superbloque.primerBloqueDatos    = 48; // El primer bloque de datos estara despues de los inodos 
+	superbloque[0].numMagico = 100383511; 
+	superbloque[0].numInodos = NUMINODO;
+	superbloque[0].numBloquesMapaInodos = 1; // Un bloque es suficiente para almacenar 48 inodos
+    superbloque[0].numBloquesMapaDatos  = 1; // Un bloque es suficiente para almacenar los bloques correspondientes al tamanyo maximo de disco
+    superbloque[0].primerInodo          = 1;
+    superbloque[0].numBloquesDatos      = NUMBLOQUESDATO;
+    superbloque[0].primerBloqueDatos    = 48; // El primer bloque de datos estara despues de los inodos 
 
 	// Se rellenan los mapas de inodos y bloques a 0 (Free)
-	for (int i=0; i<superbloque.numInodos; i++) {
+	for (int i=0; i<superbloque[0].numInodos; i++) {
         i_map[i] = 0; // free
     }
 
-    for (int i=0; i<superbloque.numBloquesDatos; i++) {
+    for (int i=0; i<superbloque[0].numBloquesDatos; i++) {
         b_map[i] = 0; // free
     }	
 
 	// Se guardan los metadatos de deviceSize
-	superbloque.tamDispositivo = deviceSize;
+	superbloque[0].tamDispositivo = deviceSize;
 
 	/*Si finalmente hemos decidido meter INTEGRITY HAY QUE INICIARLIZARLO AQUÍ */
 	
 	// memset rellena con 0 tantas posiciones como sizeof(TipoInodoDisco) a partir de &(inodo[i]), es decir, rellena los inodos a 0
-	for (int i=0; i<superbloque.numInodos; i++) {
-        memset(&(inodo[i]), 0, sizeof(TipoInodoDisco) );  
+	for (int i=0; i<superbloque[0].numInodos; i++) {
+        memset(&(inodos[i]), 0, sizeof(TipoInodoDisco) );  
     }
 	// Se desmonta el dispositivo y control de ERROR
 	if (unmountFS() == -1) return -1;
@@ -77,8 +88,8 @@ int mountFS(void)
 
 	// Bread traera al FS los bloques del disco que contenga los metadatos necesarios para montar el disco 
 	
-	// Leer bloque 0 de disco y guardarlo en superbloque
-	if (bread(DEVICE_IMAGE, 0, (char *)&superbloque) == -1) return -1;
+	// Leer bloque 0 de disco y guardarlo en superbloque[0]
+	if (bread(DEVICE_IMAGE, 0, (char *)&superbloque[0]) == -1) return -1;
 
 	// Leer el bloque del mapa de inodos 
 	if (bread(DEVICE_IMAGE, 1, (char *)i_map) == -1) return -1;
@@ -87,8 +98,8 @@ int mountFS(void)
 	if (bread(DEVICE_IMAGE, 2, (char *)b_map) == -1) return -1;
 
 	// Leer los i-nodos de disco
-    for (int i=0; i<(superbloque.numInodos*sizeof(TipoInodoDisco)/BLOCK_SIZE); i++) {
-          if (bread(DEVICE_IMAGE, 3, ((char *)inodo + i*BLOCK_SIZE)) == -1) return -1;
+    for (int i=0; i<(superbloque[0].numInodos*sizeof(TipoInodoDisco)/BLOCK_SIZE); i++) {
+          if (bread(DEVICE_IMAGE, 3, ((char *)inodos + i*BLOCK_SIZE)) == -1) return -1;
     }
 
 	// Se devuelve -1 en caso de error y 0 en caso de que la ejección sea correcta
@@ -107,7 +118,7 @@ int unmountFS(void)
 	// Brwrite copiara al disco los bloques que contengan los metadatos  
 	
 	// Escribir bloque 0 al disco 
-	if (bwrite(DEVICE_IMAGE, 0, (char *)&superbloque) == -1) return -1;
+	if (bwrite(DEVICE_IMAGE, 0, (char *)&superbloque[0]) == -1) return -1;
 
 	// Escribir el bloque del mapa de inodos 
 	if (bwrite(DEVICE_IMAGE, 1, (char *)i_map) == -1) return -1;
@@ -116,8 +127,8 @@ int unmountFS(void)
 	if (bwrite(DEVICE_IMAGE, 2, (char *)b_map) == -1) return -1;
 
 	// Escribir los i-nodos a disco 
-    for (int i=0; i<(superbloque.numInodos*sizeof(TipoInodoDisco)/BLOCK_SIZE); i++) {
-          if (bwrite(DEVICE_IMAGE, 3, ((char *)inodo + i*BLOCK_SIZE)) == -1) return -1;
+    for (int i=0; i<(superbloque[0].numInodos*sizeof(TipoInodoDisco)/BLOCK_SIZE); i++) {
+          if (bwrite(DEVICE_IMAGE, 3, ((char *)inodos + i*BLOCK_SIZE)) == -1) return -1;
     }
 
 	// Se devuelve -1 en caso de error y 0 en caso de que la ejección sea correcta

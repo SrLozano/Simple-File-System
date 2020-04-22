@@ -36,7 +36,7 @@ typedef struct TipoSuperbloque{
     unsigned int numBloquesMapaInodos;      /* Número de bloques del mapa inodos */
     unsigned int numBloquesMapaDatos;       /* Número de bloques del mapa  datos */
     unsigned int numInodos; 	            /* Número de inodos en el dispositivo */
-    unsigned int primerInodo;	            /* Número bloque del 1º inodo del disp. (inodo raíz) */
+    unsigned int primerInodo;	            /* Número del bloque del 1º inodo del disp. (inodo raíz) */
     unsigned int numBloquesDatos;           /* Número de bloques de datos en el disp. */
     unsigned int primerBloqueDatos;         /* Número de bloque del 1º bloque de datos */
     unsigned int tamDispositivo;	    /* Tamaño total del disp. (en bytes) */

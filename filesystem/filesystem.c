@@ -73,7 +73,10 @@ int mkFS(long deviceSize)
 
 	printf("Hola\n");
 	// Se desmonta el dispositivo y control de ERROR
-	if (unmountFS() == -1) return -1;
+	/*if (unmountFS() == -1){
+		printf("FALLO SUBNORMAL\n");
+		return -1;	
+	} */
 	return 0;
 }
 
@@ -104,25 +107,29 @@ int mountFS(void)
 	// Leer del disco [bloque 0] al superbloque
 	if (bread(DEVICE_IMAGE, 0, (char *)&superbloque[0]) == -1) return -1;
 	
-	printf("Hola Mount 2");
+	
 
 	// Comprobamos si el FS a montar es el que nosotros queremos
 	if (superbloque[0].numMagico != 100383511) return -1;
+	printf("Hola Mount 2\n");
 
 	// Leer del disco [bloque 1] los bloques del mapa de inodos. Solo hay uno pero el for generaliza
 	for (int i=0; i<superbloque[0].numBloquesMapaInodos; i++){
 		if (bread(DEVICE_IMAGE, 1+i, (char *)i_map + i*BLOCK_SIZE) == -1) return -1;
 	}
+	printf("Hola Mount 3\n");
 
 	// Leer del disco [bloque 2] los bloques del mapa de bloques de datos. Solo hay uno pero el for generaliza
 	for (int i=0; i<superbloque[0].numBloquesMapaDatos; i++){
 		if (bread(DEVICE_IMAGE, 1 + superbloque[0].numBloquesMapaInodos + i, (char *)b_map + i*BLOCK_SIZE) == -1) return -1;
 	}
+	printf("Hola Mount 4\n");
 
 	// Leer los i-nodos del disco a memoria
     for (int i=0; i<(superbloque[0].numInodos*sizeof(TipoInodoDisco)/BLOCK_SIZE); i++) {
           if (bread(DEVICE_IMAGE, i + superbloque[0].primerInodo, ((char *)inodos + i*BLOCK_SIZE)) == -1) return -1;
     }
+    printf("Hola Mount 5\n");
 
 	/* ¿LOS BLOQUES NO SE LEEN A MEMORIAS? */
 
@@ -138,39 +145,45 @@ int mountFS(void)
 int unmountFS(void)
 {	
 	// Se comprueba si el sistema NO está montado, pues no lo podría desmontar
-	if (0 == esta_montado) {
+	if (1 == esta_montado) {
+		printf("TU PUTO SISTEMA ESTA MONTADO\n");
         return -1 ; //Error
     }
 
 	// Los ficheros deben estar cerrados para poder desmontar
 	for (int i=0; i<superbloque[0].numInodos; i++){
 		if(inodosx[i].abierto == 1){
+			printf("TU PUTO FICHERO ESTA ABIERTO\n");
 			return -1; //Error
 		}
 	}
 	
-	printf("Hola 2\n");
-
+	
 	/* A continuación introducimos en el disco los metadatos [PERSISTENCIA]
 		Brwrite copiara al disco los bloques que contengan los metadatos */ 
 	
 	// Escribir superbloque al disco [bloque 0]
 	if (bwrite(DEVICE_IMAGE, 0, (char *)&superbloque[0]) == -1) return -1;
+	printf("Hola 2\n");
+
 
 	// Escribir los bloques del mapa de inodos [bloque 1] Solo hay uno pero el for generaliza
 	for (int i=0; i<superbloque[0].numBloquesMapaInodos; i++){
 		if (bwrite(DEVICE_IMAGE, 1+i, (char *)i_map + i*BLOCK_SIZE) == -1) return -1;
 	}
+	printf("Hola 3\n");
 
 	// Escribir los bloques del mapa de bloques de datod [bloque 2] Solo hay uno pero el for generaliza
 	for (int i=0; i<superbloque[0].numBloquesMapaDatos; i++){
 		if (bwrite(DEVICE_IMAGE, 1 + superbloque[0].numBloquesMapaInodos + i, (char *)b_map + i*BLOCK_SIZE) == -1) return -1;
 	}
+	printf("Hola 4\n");
 
 	// Escribir los i-nodos a disco 
     for (int i=0; i<(superbloque[0].numInodos*sizeof(TipoInodoDisco)/BLOCK_SIZE); i++) {
           if (bwrite(DEVICE_IMAGE, i + superbloque[0].primerInodo, ((char *)inodos + i*BLOCK_SIZE)) == -1) return -1;
     }
+    printf("Hola 5\n");
 
 	/* ¿LOS BLOQUES NO SE GUARDAN A DISCO? */
 

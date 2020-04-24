@@ -74,7 +74,6 @@ int mkFS(long deviceSize)
 	printf("Hola\n");
 	// Se desmonta el dispositivo y control de ERROR
 	if (unmountFS() == -1){
-		printf("FALLO SUBNORMAL\n");
 		return -1;	
 	} 
 	return 0;
@@ -146,14 +145,13 @@ int unmountFS(void)
 {	
 	// Se comprueba si el sistema NO está montado, pues no lo podría desmontar
 	/*if (0 == esta_montado) {
-		printf("TU PUTO SISTEMA ESTA MONTADO\n");
         return -1 ; //Error
     } */
 
 	// Los ficheros deben estar cerrados para poder desmontar
 	for (int i=0; i<superbloque[0].numInodos; i++){
 		if(inodosx[i].abierto == 1){
-			printf("TU PUTO FICHERO ESTA ABIERTO\n");
+			printf("TU FICHERO ESTA ABIERTO\n");
 			return -1; //Error
 		}
 	}

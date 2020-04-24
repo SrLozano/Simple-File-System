@@ -29,12 +29,14 @@ int bread(char *deviceName, int blockNumber, char *buffer) {
 
 	if(fd < 0){
 		/* fprintf(stderr, "ERROR: UNABLE TO OPEN DISK FILE %s \n", deviceName); */
+		printf("polla1\n");
 		return -1;
 	}
 
 	int len = lseek(fd, 0, SEEK_END) + 1;
 	if((BLOCK_SIZE*blockNumber+BLOCK_SIZE) > len) {
 		close(fd);
+		printf("polla2\n");
 		return -1;
 	}
 

@@ -44,20 +44,35 @@ typedef struct TipoSuperbloque{
 } TipoSuperbloque;
 
 typedef struct TipoInodoDisco{
-    unsigned int tipo;	                  /* T_FICHERO o T_DIRECTORIO */
+    // Solo va a ver ficheros, no hace falta REVISAR
+    //unsigned int tipo;	                  /* T_FICHERO o T_DIRECTORIO */
     char nombre[MAX_LENGHT];	                  /* Nombre del fichero/ directorio asociado */
     
     /*¿POR QUÉ ES 200?, HAY QUE REVISARLO, ¿ESTÁ EN LOS REQUISITOS?*/
-    unsigned int inodosContenidos[200];   /* tipo==dir: lista de los inodos del directorio */
+    //Este es para directorios
+    //unsigned int inodosContenidos[200];   /* tipo==dir: lista de los inodos del directorio */
     
     unsigned int size;	                  /* Tamaño actual del fichero en bytes */
+
+    //Hacer un array porque son como mucho 5 bloques un fichro
     unsigned int bloqueDirecto;	          /* Número del bloque directo */
-    unsigned int bloqueIndirecto;	  /* Número del bloque indirecto */
-    
+
+    //unsigned int bloqueIndirecto;	  /* Número del bloque indirecto */
+
+    //Boolena para ver si tiene integridad 
+    //unsigned int integridad ; // cada vez que se hgace close se sincroniza
+
     /*ESTE CAMPO DE RELLENO DEPENDE DE CÓMO DEFINAMOS LO ANTERIOR Y AÚN NO ESTA CLARO ASÍ QUE HAY QUE REPENSARLO*/
-    char relleno[BLOCK_SIZE-204*sizeof(int)-200]; /* Campo relleno para llenar un bloque */
 
 } TipoInodoDisco;
+
+typedef struct TipoInodosBloque{
+  TipoInodoDisco inodos [24];
+
+  //Recalcular
+  char relleno[BLOCK_SIZE-204*sizeof(int)-200]; /* Campo relleno para llenar un bloque */
+  //Si cabe en un bloque y si no en 2
+}
 
 //#define PADDING_INODO (BLOCK_SIZE - sizeof(TipoInodoDisco))
 

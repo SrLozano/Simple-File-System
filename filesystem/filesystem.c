@@ -22,7 +22,8 @@ TipoInodoDisco inodos[NUMINODO];
 char i_map[NUMINODO] ; // Mapa de bits con los inodos (usado: i_map[x]=1 | libre: i_map[x]=0)    
 char b_map[NUMBLOQUESDATO] ; // Mapa de bits con los bloques (usado: b_map[x]=1 | libre: b_map[x]=0)
 
-struct //Información extra de apoyo
+struct //Información extra de apoyo. 
+//No va a disco, se pierde al cargar en disco
 
 {
 	//Nos indica por cada inodo si está abierto y en qué posición está en caso de que esté abierto.
@@ -73,7 +74,7 @@ int mkFS(long deviceSize)
 
 	printf("Hola\n");
 	// Se desmonta el dispositivo y control de ERROR
-	if (unmountFS() == -1){
+	if (unmountFS() == -1){ //Llamar a función simcronizar
 		return -1;	
 	} 
 	return 0;

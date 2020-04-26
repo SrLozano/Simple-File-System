@@ -24,6 +24,8 @@ static inline void bitmap_setbit(char *bitmap_, int i_, int val_) {
 #define BLOCK_SIZE 2048
 #define OPEN 1
 #define CLOSE 0
+#define BLOCKS_FOR_INODES 2
+#define NUMBER_INODES_PER_BLOCK 24
 
 struct INode;
 struct Superblock;
@@ -55,7 +57,7 @@ typedef struct TipoInodoDisco{
         y cada bloque tiene 2048 Bytes  entonces se apunta a 5 bloques como máximo */
     unsigned int bloqueDirecto[5];	            /* Número del bloque directo */
 
-    unsigned int integrididad;                           /* Booleano de integridad 0: No tiene integridad, 1: Tiene integridad*/
+    unsigned int integridad_boolean;            /* Booleano de integridad 0: No tiene integridad, 1: Tiene integridad*/
     unsigned int integridad ;                   /* cada vez que se hgace close se sincroniza */
 
 } TipoInodoDisco;
@@ -64,8 +66,8 @@ typedef struct TipoInodoDisco{
 typedef struct TipoInodosBloque{ 
 
   /* Cada inodo ocupa 64 Bytes, hay 48 luego son 3072B asi que no caben en un solo bloque */
-  TipoInodoDisco inodos [24];                           /* 1536 B */
-  char relleno[BLOCK_SIZE-24*sizeof(TipoInodoDisco)];   /* Campo relleno */
+  TipoInodoDisco inodos [NUMBER_INODES_PER_BLOCK];                           /* 1536 B */
+  char relleno[BLOCK_SIZE-NUMBER_INODES_PER_BLOCK*sizeof(TipoInodoDisco)];   /* Campo relleno */
 
 } TipoInodosBloque;
 

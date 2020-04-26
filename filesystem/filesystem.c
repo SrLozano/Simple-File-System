@@ -194,8 +194,42 @@ int unmountFS(void)
  * @return	0 if success, -1 if the file already exists, -2 in case of error.
  */
 int createFile(char *fileName)
-{
-	return -2;
+{	
+	int b_id, inodo_id;
+
+	inodo_id = ialloc(); 		/*Función que nos identifica el primer inodo libre*/
+
+	if(inodo_id < 0){
+		return -2; // Fallo, no hay inodos libres
+	}
+
+	b_id = alloc();				/*Función que nos identifica el primer bloque libre*/
+
+	if(b_id < 0){
+		ifree(inodo_id); // Liberamos el inodo seleccionado anteriormente
+		return -2; // Fallo, no hay bloques libres
+	}
+
+	int bloque_buscar; // Para saber en qué bloque de inodos buscar
+	if (inodo_id < 24){ // Es de los primeros 24 inodos asi que primer bloque de inodos
+		bloque_buscar = 0;
+	} else{ // Segundo bloque de inodos
+		bloque_buscar = 1;
+	}
+
+	strcpy(	bloques_inodos[bloque_buscar].inodos[inodo_id].nombre, fileName);
+
+	// Apuntamos al bloque libre
+	bloques_inodos[bloque_buscar].inodos[inodo_id].bloqueDirecto[1] = b_id;
+
+	// Cambiamos la estructura auxiliar para indicar que está abierto y su posición
+	inodosx[(bloque_buscar+1)*inodo_id].posicion = 0;
+	inodosx[(bloque_buscar+1)*inodo_id].posicion = 1;
+
+	/*FALTAAAAAAA comprobar que el fichero no exista ya en el sistema de fiechros*/
+	/*FALTAAAAAAAA HACER LAS FUNCIÓNES ALLOC Y ALLOC Y IALLOC*/
+
+	return 0;
 }
 
 /*

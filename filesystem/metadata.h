@@ -50,7 +50,7 @@ typedef struct TipoInodoDisco{
     /*  En el sistema considerado solo se tendrá soporte para ficheros y no directórios, tal y 
         como se especifica en los requisitos */
     
-    char nombre[MAX_LENGHT];	                  /* Nombre del fichero/ directorio asociado */ 
+    char nombre[MAX_LENGHT];	                  /* Nombre del fichero/directorio asociado */ 
     unsigned int size;	                        /* Tamaño actual del fichero en bytes */
 
     /*  Cada inodo apunta a un fichero y como el tamaño máximo de un fichero es 10240 Bytes

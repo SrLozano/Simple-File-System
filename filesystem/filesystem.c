@@ -190,16 +190,118 @@ int unmountFS(void)
 }
 
 /*
+ * @brief 	computes the position of the inode map
+ * @return 	array of position of the inode exists [block, position in the block], [-1, -1] otherwise.
+ */
+int * computePositionInodeMap(int positionMap)
+{
+	int bloque_buscar = -1;
+	int inodo_buscar = -1;
+
+	if (positionMap < NUMBER_INODES_PER_BLOCK){ // Es de los primeros 24 inodos asi que primer bloque de inodos
+		bloque_buscar = 0;
+		inodo_buscar = positionMap;
+	} else if(positionMap < NUMINODO){ // Segundo bloque de inodos
+		bloque_buscar = 1;
+		inodo_buscar = positionMap - NUMBER_INODES_PER_BLOCK;
+	}
+
+	int *array = malloc (sizeof(int)*2);
+	array[0] = bloque_buscar;
+	array[1] = inodo_buscar;
+
+	return array;
+}
+
+/*
+ * @brief 	Allocates an inode
+ * @return 	array of position of the inode if success, [-1, -1] otherwise.
+ */
+
+int* ialloc(void)
+{
+	int i;
+	int *array = malloc (sizeof(int)*2);
+	
+	for(i=0; i<NUMINODO; i++){ // Recorremos el mapa de inodos
+		
+		if(i_map[i] == 0){  // Primer inodo libre, indicado por el mapa
+            
+			i_map[i] = 1;	// inodo ocupado ahora
+			array = computePositionInodeMap(i); // Calculamos la posición dentro de nuestro sistema de ficheros
+			
+			if (array[0] == -1 || array[1]==-1)	{return array; } // Control de errores, no se ha encontrado inodo
+        	
+			memset(&(bloques_inodos[array[0]].inodos[array[1]]), 0, sizeof(TipoInodoDisco) ); // Rellenamos a 0
+			
+			return array; 
+
+		}
+
+	}
+
+	// No se ha encontrado ninguna posición libre
+	int *error = malloc (sizeof(int)*2);
+	error[0] = -1;
+	error[1] = -1;
+	return error;
+
+}
+
+/*
+ * @brief 	Allocates a block
+ * @return 	block if success, -1 otherwise.
+ */
+int alloc(void)
+{
+	char b[BLOCK_SIZE];
+	int i;
+
+	for(i = 0; i<superbloque[0].numBloquesDatos; i++){  //Recorremos todos los bloques de de datos
+
+		if(b_map[i] == 0){              // Primer bloque libre, indicado por el mapa
+
+			b_map[i] = 1;               // Bloque ocupado ahora
+			memset(b, 0, BLOCK_SIZE);   // Rellenamos a 0 el bloque
+			bwrite(DEVICE_IMAGE, superbloque[0].primerBloqueDatos + i, b); // Lo grabamos a disco
+
+			return i;
+		}
+	}
+
+	return -1;
+}
+
+/*
+ * @brief 	Liberates an inode
+ * @return  1 if success, -1 if fail
+ */
+int ifree(int * arrayPosicion)
+{	
+	// Comprobar validez inodo
+	if ((arrayPosicion[0]+1)*arrayPosicion[1] > NUMINODO){
+		return -1;
+	}
+
+	// Liberar inodo
+	i_map[(arrayPosicion[0]+1)*arrayPosicion[1]] = 0;
+
+	return 1;
+}
+
+
+/*
  * @brief	Creates a new file, provided it it doesn't exist in the file system.
  * @return	0 if success, -1 if the file already exists, -2 in case of error.
  */
 int createFile(char *fileName)
 {	
-	int b_id, inodo_id;
+	int b_id; 
+	int *inodo_id;
 
 	inodo_id = ialloc(); 		/*Función que nos identifica el primer inodo libre*/
 
-	if(inodo_id < 0){
+	if(inodo_id[0] < 0 || inodo_id[1] < 0){
 		return -2; // Fallo, no hay inodos libres
 	}
 
@@ -207,27 +309,24 @@ int createFile(char *fileName)
 
 	if(b_id < 0){
 		ifree(inodo_id); // Liberamos el inodo seleccionado anteriormente
-		return -2; // Fallo, no hay bloques libres
+		return -2;       // Fallo, no hay bloques libres
 	}
 
-	int bloque_buscar; // Para saber en qué bloque de inodos buscar
-	if (inodo_id < 24){ // Es de los primeros 24 inodos asi que primer bloque de inodos
-		bloque_buscar = 0;
-	} else{ // Segundo bloque de inodos
-		bloque_buscar = 1;
-	}
+	for (int i=0; i<BLOCKS_FOR_INODES; i++) {
+		for(int j=0; j<NUMBER_INODES_PER_BLOCK; j++){
+			// El fichero ya existe en el sistema si el nombre ya está en uso
+        	if(strcmp(fileName, bloques_inodos[i].inodos[j].nombre) == 0){ return -1;} 
+		}
+    }
 
-	strcpy(	bloques_inodos[bloque_buscar].inodos[inodo_id].nombre, fileName);
+	strcpy(	bloques_inodos[inodo_id[0]].inodos[inodo_id[1]].nombre, fileName);
 
 	// Apuntamos al bloque libre
-	bloques_inodos[bloque_buscar].inodos[inodo_id].bloqueDirecto[1] = b_id;
+	bloques_inodos[inodo_id[0]].inodos[inodo_id[1]].bloqueDirecto[1] = b_id;
 
 	// Cambiamos la estructura auxiliar para indicar que está abierto y su posición
-	inodosx[(bloque_buscar+1)*inodo_id].posicion = 0;
-	inodosx[(bloque_buscar+1)*inodo_id].posicion = 1;
-
-	/*FALTAAAAAAA comprobar que el fichero no exista ya en el sistema de fiechros*/
-	/*FALTAAAAAAAA HACER LAS FUNCIÓNES ALLOC Y ALLOC Y IALLOC*/
+	inodosx[(inodo_id[0]+1)*inodo_id[1]].posicion = 0;
+	inodosx[(inodo_id[0]+1)*inodo_id[1]].posicion = 1;
 
 	return 0;
 }

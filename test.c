@@ -60,6 +60,27 @@ int main()
 
 	///////
 
+	ret = closeFile(0); // El archivo se debe haber creado en el primer inodo libre
+	if (ret != 0)
+	{
+		fprintf(stdout, "%s%s%s%s%s", ANSI_COLOR_BLUE, "TEST closeFile ", ANSI_COLOR_RED, "FAILED\n", ANSI_COLOR_RESET);
+		return -1;
+	}
+	fprintf(stdout, "%s%s%s%s%s", ANSI_COLOR_BLUE, "TEST closeFile ", ANSI_COLOR_GREEN, "SUCCESS\n", ANSI_COLOR_RESET);
+
+	///////
+
+	ret = openFile("/test.txt");
+	if (ret != 0) // Debe ser 0 porque es donde tenemos ese archivo concreto, en el primer inodo que hay 
+	{	
+		printf("Hola: %i", ret);
+		fprintf(stdout, "%s%s%s%s%s", ANSI_COLOR_BLUE, "TEST openFile ", ANSI_COLOR_RED, "FAILED\n", ANSI_COLOR_RESET);
+		return -1;
+	}
+	fprintf(stdout, "%s%s%s%s%s", ANSI_COLOR_BLUE, "TEST openFile ", ANSI_COLOR_GREEN, "SUCCESS\n", ANSI_COLOR_RESET);
+
+	///////
+
 	ret = removeFile("/test.txt");
 	if (ret != 0)
 	{
@@ -69,6 +90,15 @@ int main()
 	fprintf(stdout, "%s%s%s%s%s", ANSI_COLOR_BLUE, "TEST removeFile ", ANSI_COLOR_GREEN, "SUCCESS\n", ANSI_COLOR_RESET);
 
 	///////
+
+	ret = closeFile(0); // El archivo  debe ser cerrado antes de hacer unmount
+	if (ret != 0)
+	{
+		fprintf(stdout, "%s%s%s%s%s", ANSI_COLOR_BLUE, "TEST closeFile ", ANSI_COLOR_RED, "FAILED\n", ANSI_COLOR_RESET);
+		return -1;
+	}
+	fprintf(stdout, "%s%s%s%s%s", ANSI_COLOR_BLUE, "TEST closeFile ", ANSI_COLOR_GREEN, "SUCCESS\n", ANSI_COLOR_RESET);
+
 
 	ret = unmountFS();
 	if (ret != 0)

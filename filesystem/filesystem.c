@@ -386,7 +386,7 @@ int createFile(char *fileName)
 
 	// Cambiamos la estructura auxiliar para indicar que está abierto y su posición
 	inodosx[(inodo_id[0]+1)*inodo_id[1]].posicion = 0;
-	inodosx[(inodo_id[0]+1)*inodo_id[1]].posicion = 1;
+	inodosx[(inodo_id[0]+1)*inodo_id[1]].abierto = 1; //¿SEGURO QUE A 1?????
 
 	return 0;
 }
@@ -421,8 +421,28 @@ int removeFile(char *fileName)
  * @return	The file descriptor if possible, -1 if file does not exist, -2 in case of error..
  */
 int openFile(char *fileName)
-{
-	return -2;
+{	
+	// FALTA COMPROBAR INTEGRIDAD UNA VEZ LA TENGAMOS ??
+
+	int *inodo_id = malloc (sizeof(int)*2);
+
+	// Buscar el inodo asociado al nombre
+	inodo_id = namei(fileName);
+
+	if(inodo_id[0] < 0 || inodo_id[1] < 0){
+		return -1; // Fallo, el fichero no existe en el sistema
+	}
+
+	if(inodosx[(inodo_id[0]+1)*inodo_id[1]].abierto == 1){
+		return -2; // Fallo, el fichero ya está abierto
+	}
+
+	// Iniciar sesion de trabajo
+	inodosx[(inodo_id[0]+1)*inodo_id[1]].abierto = 1;
+	inodosx[(inodo_id[0]+1)*inodo_id[1]].posicion = 0;
+
+	// Devolvemos el número de inodo correspondiente al fichero, su descriptor
+	return (inodo_id[0]+1)*inodo_id[1];
 }
 
 /*
@@ -430,8 +450,17 @@ int openFile(char *fileName)
  * @return	0 if success, -1 otherwise.
  */
 int closeFile(int fileDescriptor)
-{
-	return -1;
+{	
+	// Comprobamos el descriptor
+	if((fileDescriptor < 0) || (fileDescriptor > NUMINODO-1)){
+		return -1;
+	}
+	
+	// Terminar sesion de trabajo
+	inodosx[fileDescriptor].abierto = 0;
+	inodosx[fileDescriptor].posicion = 0;
+
+	return 0;
 }
 
 /*

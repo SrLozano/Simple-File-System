@@ -1,4 +1,3 @@
-
 /*
  *
  * Operating System Design / Diseño de Sistemas Operativos
@@ -15,7 +14,6 @@
  * @brief 	Synchronises disk and memory
  * @return 	0 if success, -1 otherwise.
  */
-
 int my_sync(void);
 
 /*
@@ -38,8 +36,18 @@ int alloc(void);
 
 /*
  * @brief 	Liberates an inode
- * @return  -1 if it fails
+ * @return  1 if success, -1 if fail
  */
 int ifree(int * arrayPosicion);
 
+/*
+ * @brief 	Liberates a block
+ * @return  1 if success, -1 if fail
+ */
+int bfree(unsigned int * arrayBloquesDirectos);
 
+/*
+ * @brief 	Search an inode looking at the name
+ * @return 	array of position of the inode if success, [-1, -1] otherwise.
+ */
+int * namei(char *fileName);

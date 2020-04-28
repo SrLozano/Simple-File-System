@@ -289,6 +289,66 @@ int ifree(int * arrayPosicion)
 	return 1;
 }
 
+/*
+ * @brief 	Liberates a block
+ * @return  1 if success, -1 if fail
+ */
+int bfree(unsigned int * arrayBloquesDirectos)
+{	
+	// Comprobamos la validez de los bloques apuntados para ver que no se salen de rango
+	for(int i=0; i<NUMBER_DIRECT_BLOCKS; i++){
+		if(arrayBloquesDirectos[i] > superbloque[0].numBloquesDatos){
+			return -1;
+		}
+	}
+
+	// Liberar bloque
+	b_map[arrayBloquesDirectos[0]] = 0;
+	/*
+	// Liberamos el bloque en el mapa
+	for(int i=0; i<NUMBER_DIRECT_BLOCKS; i++){
+		if(arrayBloquesDirectos[i] ){
+			b_map[arrayBloquesDirectos[i]] = 0;
+		}
+	}
+	*/
+
+	return 1;
+}
+
+/*
+ * @brief 	Search an inode looking at the name
+ * @return 	array of position of the inode if success, [-1, -1] otherwise.
+ */
+int * namei(char *fileName)
+{	
+
+	int bloque_buscar = -1;
+	int inodo_buscar = -1;
+	int *array = malloc (sizeof(int)*2);
+
+	// Buscamos el inodo con el nombre fileName y devolvemos qué inodo es
+	for (int i=0; i<BLOCKS_FOR_INODES; i++) {
+		for(int j=0; j<NUMBER_INODES_PER_BLOCK; j++){
+			
+        	if(strcmp(fileName, bloques_inodos[i].inodos[j].nombre) == 0){ 
+				//Asignamos los valores del array a devolver
+				bloque_buscar = i;
+				inodo_buscar = j;
+			} 
+		}
+    }
+	
+	// Control de errores en caso de no encontarlo
+	array[0] = bloque_buscar;
+	array[1] = inodo_buscar;
+
+	return array;
+	
+}
+
+
+
 
 /*
  * @brief	Creates a new file, provided it it doesn't exist in the file system.
@@ -322,7 +382,7 @@ int createFile(char *fileName)
 	strcpy(	bloques_inodos[inodo_id[0]].inodos[inodo_id[1]].nombre, fileName);
 
 	// Apuntamos al bloque libre
-	bloques_inodos[inodo_id[0]].inodos[inodo_id[1]].bloqueDirecto[1] = b_id;
+	bloques_inodos[inodo_id[0]].inodos[inodo_id[1]].bloqueDirecto[0] = b_id;
 
 	// Cambiamos la estructura auxiliar para indicar que está abierto y su posición
 	inodosx[(inodo_id[0]+1)*inodo_id[1]].posicion = 0;
@@ -337,7 +397,23 @@ int createFile(char *fileName)
  */
 int removeFile(char *fileName)
 {
-	return -2;
+	int *array = malloc (sizeof(int)*2);
+
+	array = namei(fileName);
+
+	if(array[0] < 0 || array[1] < 0){
+		return -1; // Fallo, el fichero no existe en el sistema
+	}
+
+	bfree(bloques_inodos[array[0]].inodos[array[1]].bloqueDirecto);
+	
+	memset(&(bloques_inodos[array[0]].inodos[array[1]]), 0, sizeof(TipoInodoDisco) ); // Rellenamos a 0
+	
+	if(ifree(array) == -1){  // Liberamos el inodo
+		return -2;
+	}
+	
+	return 0;
 }
 
 /*

@@ -59,7 +59,7 @@ typedef struct TipoInodoDisco{
     unsigned int bloqueDirecto[NUMBER_DIRECT_BLOCKS];	            /* Número del bloque directo */
 
     unsigned int integridad_boolean;            /* Booleano de integridad 0: No tiene integridad, 1: Tiene integridad*/
-    unsigned int integridad ;                   /* cada vez que se hgace close se sincroniza */
+    unsigned int integridad ;                   /* cada vez que se hace close se sincroniza */
 
 } TipoInodoDisco;
 

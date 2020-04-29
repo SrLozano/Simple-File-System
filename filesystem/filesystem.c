@@ -351,6 +351,34 @@ int * namei(char *fileName)
 	
 }
 
+/*
+ * @brief 	Search the associated block given a file descriptor and an offset
+ * @return 	block if success, -1 otherwise.
+ */
+int * bmap(int inodo_id, int offset)
+{
+	int bloque_logico;
+
+	// Comprobar validez de inodo_id
+	if (inodo_id > superbloque[0].numInodos){
+		return -1;
+	}
+
+	// Buscar bloque lógico de datos asociado
+	bloque_logico = offset / BLOCK_SIZE;
+
+
+	int *array = malloc (sizeof(int)*2);
+	array = computePositionInodeMap(inodo_id); // Calculamos la posición dentro de nuestro sistema de ficheros
+
+	// Devolver la referencia añ bloque directo para saber de cuál estamos hablando
+	if (bloque_logico >= 0 || bloque_logico < NUMBER_DIRECT_BLOCKS){ // Devolveremos el bloque directo que se encuentre dentro de los límites
+		return bloques_inodos[array[0]].inodos[array[1]].bloqueDirecto[bloque_logico];
+	}else{
+		return -1; // Error
+	}
+}
+
 
 
 
@@ -472,8 +500,35 @@ int closeFile(int fileDescriptor)
  * @return	Number of bytes properly read, -1 in case of error.
  */
 int readFile(int fileDescriptor, void *buffer, int numBytes)
-{
-	return -1;
+{	
+	char b[BLOCK_SIZE]; // Reserva de espacio para lo que vamos a leer
+	int b_id;
+
+	int *array = malloc (sizeof(int)*2);
+	array = computePositionInodeMap(fileDescriptor); // Calculamos la posición dentro de nuestro sistema de ficheros
+
+	if(inodosx[fileDescriptor].posicion + numBytes > bloques_inodos[array[0]].inodos[array[1]].size){
+
+		/*  Si el puntero al fichero más lo que hay que leer es ya mayor que lo que de verdad contiene el fichero,
+			comprobaremos ya cuánto se puede leer como máximo */
+		numBytes = bloques_inodos[array[0]].inodos[array[1]].size - inodosx[fileDescriptor].posicion; // Lo que aún puedo leer
+	}
+
+	if(numBytes == 0){
+		return 0; // Devolvemos 0 porque el puntero de posición está al final del fichero
+	}else if(numBytes < 0){
+		return -1; // Error
+	}
+
+	b_id = bmap(fileDescriptor, inodosx[fileDescriptor].posicion); // Saber cual es el bloque asociado. Dado un descriptor de fichero y un offset te devuelve el bloque asociado
+	if(b_id == -1){
+		return -1; // Control de errores
+	}
+	bread(DEVICE_IMAGE, b_id, b);
+	memmove(buffer, b+inodosx[fileDescriptor].posicion, numBytes); // Mueve desde posición mas b, numBytes a buffer
+	inodosx[fileDescriptor].posicion += numBytes;
+
+	return numBytes;
 }
 
 /*

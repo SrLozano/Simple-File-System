@@ -74,6 +74,14 @@ int mkFS(long deviceSize)
 		}
     }
 
+	// Establecemos el valor de los bloques directos a -1 para saber cuales tenemos en uso y cuales no
+	for (int i=0; i<BLOCKS_FOR_INODES; i++) {
+		for(int j=0; j<NUMBER_INODES_PER_BLOCK; j++){
+			for(int k=0; k<NUMBER_DIRECT_BLOCKS; k++)
+			bloques_inodos[i].inodos[j].bloqueDirecto[k] = -1;
+		}
+	}
+
 	// Se llama a la función sincronizar y control de ERROR
 	if (my_sync() == -1){ 
 		return -1;	
@@ -301,18 +309,14 @@ int bfree(unsigned int * arrayBloquesDirectos)
 			return -1;
 		}
 	}
-
-	// Liberar bloque
-	b_map[arrayBloquesDirectos[0]] = 0;
-	/*
-	// Liberamos el bloque en el mapa
+	
+	// Liberamos los bloquea en el mapa de bloques en uso
 	for(int i=0; i<NUMBER_DIRECT_BLOCKS; i++){
-		if(arrayBloquesDirectos[i] ){
+		if(arrayBloquesDirectos[i] != -1){
 			b_map[arrayBloquesDirectos[i]] = 0;
 		}
 	}
-	*/
-
+	
 	return 1;
 }
 

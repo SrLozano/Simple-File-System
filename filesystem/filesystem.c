@@ -520,6 +520,14 @@ int readFile(int fileDescriptor, void *buffer, int numBytes)
 		return -1; // Error
 	}
 
+	/*AHORA MISMO COMO ESTÁ CREO QUE SOLO LEE UN BLOQUE, HAY QUE HACERLO PARA MUCHOS BLOQUES?????*/
+	/*
+	int avance = numBytes/BLOCK_SIZE;
+
+	while(numBytes > 0){
+
+	}
+	*/
 	b_id = bmap(fileDescriptor, inodosx[fileDescriptor].posicion); // Saber cual es el bloque asociado. Dado un descriptor de fichero y un offset te devuelve el bloque asociado
 	if(b_id == -1){
 		return -1; // Control de errores
@@ -536,8 +544,40 @@ int readFile(int fileDescriptor, void *buffer, int numBytes)
  * @return	Number of bytes properly written, -1 in case of error.
  */
 int writeFile(int fileDescriptor, void *buffer, int numBytes)
-{
-	return -1;
+{	
+	/*EN ESTA FUNCIÓN EXACTAMENTE LA MISMA DUDA QUE CON READ, SI ES MAS DE UN BLOQUE TENEMOS QUE 
+	ADAPTAR TANTO B COMO EL NUMERO DE VUELTAS A LA DE ESCRIBIR ABAJO*/
+
+	char b[BLOCK_SIZE]; // Reserva de espacio para lo que vamos a escribir
+	int b_id;
+
+	int *array = malloc (sizeof(int)*2);
+	array = computePositionInodeMap(fileDescriptor); // Calculamos la posición dentro de nuestro sistema de ficheros
+
+	if(inodosx[fileDescriptor].posicion + numBytes > bloques_inodos[array[0]].inodos[array[1]].size){
+
+		/*  Si el puntero al fichero más lo que hay que leer es ya mayor que lo que de verdad contiene el fichero,
+			comprobaremos ya cuánto se puede leer como máximo */
+		numBytes = bloques_inodos[array[0]].inodos[array[1]].size - inodosx[fileDescriptor].posicion; // Lo que aún puedo leer
+	}
+
+	if(numBytes == 0){
+		return 0; // Devolvemos 0 porque el puntero de posición está al final del fichero
+	}else if(numBytes < 0){
+		return -1; // Error
+	}
+
+	b_id = bmap(fileDescriptor, inodosx[fileDescriptor].posicion); // Saber cual es el bloque asociado. Dado un descriptor de fichero y un offset te devuelve el bloque asociado
+	if(b_id == -1){
+		return -1; // Control de errores
+	}
+	
+	bread(DEVICE_IMAGE, b_id, b);
+	memmove(b+inodosx[fileDescriptor].posicion, buffer, numBytes); // Mueve desde buffer a posición mas b un número numBytes
+	bwrite(DEVICE_IMAGE, b_id, b); // Hay que volver a escribir en disco
+	inodosx[fileDescriptor].posicion += numBytes;
+
+	return numBytes;
 }
 
 /*

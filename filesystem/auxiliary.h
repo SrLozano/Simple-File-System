@@ -56,4 +56,4 @@ int * namei(char *fileName);
  * @brief 	Search the associated block given a file descriptor and an offset
  * @return 	block if success, -1 otherwise.
  */
-int * bmap(int inodo_id, int offset);
+int bmap(int inodo_id, int offset);

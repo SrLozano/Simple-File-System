@@ -74,11 +74,11 @@ int mkFS(long deviceSize)
 		}
     }
 
-	// Establecemos el valor de los bloques directos a -1 para saber cuales tenemos en uso y cuales no
+	// Establecemos el valor de los bloques directos a -3 para saber cuales tenemos en uso y cuales no
 	for (int i=0; i<BLOCKS_FOR_INODES; i++) {
 		for(int j=0; j<NUMBER_INODES_PER_BLOCK; j++){
 			for(int k=0; k<NUMBER_DIRECT_BLOCKS; k++)
-			bloques_inodos[i].inodos[j].bloqueDirecto[k] = -1;
+			bloques_inodos[i].inodos[j].bloqueDirecto[k] = -3;
 		}
 	}
 
@@ -578,13 +578,14 @@ int writeFile(int fileDescriptor, void *buffer, int numBytes)
 	}
 
 	b_id = bmap(fileDescriptor, inodosx[fileDescriptor].posicion); // Saber cual es el bloque asociado. Dado un descriptor de fichero y un offset te devuelve el bloque asociado
-	if(b_id == -1){ // Por ddefecto esta a -1 pero es lo mimso que codigo de erroe CUIDADO, 
-	//MEJOR CAMBIARLO!!!!!!
+	if(b_id == -1){
 		return -1; // Control de errores. 
 	}
-	if(b_id == -3){
-		//balloc me Cuadno no es capaz de traducir hay que pedir un bloque 
-
+	if(b_id == -3){ // El bloque directo aún no ha sido inicializado
+		int block_allocated = alloc();
+		int *array = malloc (sizeof(int)*2);
+		array = computePositionInodeMap(block_allocated); // Calculamos la posición dentro de nuestro sistema de ficheros
+		bloques_inodos[array[0]].inodos[array[1]].bloqueDirecto[0] = block_allocated; // ESTO NO SERÁ 0, SERÁ OTRA COSA
 	}
 	bread(DEVICE_IMAGE, b_id, b);
 	memmove(b+inodosx[fileDescriptor].posicion, buffer, numBytes); // Mueve desde buffer a posición mas b un número numBytes

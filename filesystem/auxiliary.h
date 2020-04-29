@@ -9,7 +9,6 @@
  *
  */
 
-
 /*
  * @brief 	Synchronises disk and memory
  * @return 	0 if success, -1 otherwise.

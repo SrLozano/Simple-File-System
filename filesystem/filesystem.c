@@ -519,15 +519,25 @@ int readFile(int fileDescriptor, void *buffer, int numBytes)
 	}else if(numBytes < 0){
 		return -1; // Error
 	}
-
-	/*AHORA MISMO COMO ESTÁ CREO QUE SOLO LEE UN BLOQUE, HAY QUE HACERLO PARA MUCHOS BLOQUES?????*/
-	/*
-	int avance = numBytes/BLOCK_SIZE;
-
-	while(numBytes > 0){
-
-	}
+	/* 
+	do {
+		int bloque_id = inodosx[fileDescriptor].posicion/BLOCK_SIZE; // 2049/2048->bloque_id (1)
+		int bloque_offset = inodosx[fileDescriptor].posicion%BLOCK_SIZE; //2049%2048->bloque_offset (1)
+		int resto_leer_del_bloque = BLOCK_SIZE - bloque_offset; //2048 -1 
+		int resto_size = size - resto_leer_bloque; // 2048 - 2047 -> resto_size
+		int a_leer =  (resto_size <= 0) ? size :resto_leer_bloque; //Esto es si se cumple pilla size y si no resto_size
+		
+		b_id = bmap(fileDescriptor, inodosx[fileDescriptor].posicion); // Saber cual es el bloque asociado. Dado un descriptor de fichero y un offset te devuelve el bloque asociado
+		if(b_id == -1){
+			return -1; // Control de errores. 
+		}
+		bread(DEVICE_IMAGE, b_id, b);
+		memmove(buffer, b+bloque_offset, a_leer); // Mueve desde posición mas b, numBytes a buffer
+		inodosx[fileDescriptor].posicion += a_leer;
+		buffer = (char *) buffer + a_leer;
+	}while(resto_size > 0)
 	*/
+	
 	b_id = bmap(fileDescriptor, inodosx[fileDescriptor].posicion); // Saber cual es el bloque asociado. Dado un descriptor de fichero y un offset te devuelve el bloque asociado
 	if(b_id == -1){
 		return -1; // Control de errores
@@ -568,10 +578,14 @@ int writeFile(int fileDescriptor, void *buffer, int numBytes)
 	}
 
 	b_id = bmap(fileDescriptor, inodosx[fileDescriptor].posicion); // Saber cual es el bloque asociado. Dado un descriptor de fichero y un offset te devuelve el bloque asociado
-	if(b_id == -1){
-		return -1; // Control de errores
+	if(b_id == -1){ // Por ddefecto esta a -1 pero es lo mimso que codigo de erroe CUIDADO, 
+	//MEJOR CAMBIARLO!!!!!!
+		return -1; // Control de errores. 
 	}
-	
+	if(b_id == -3){
+		//balloc me Cuadno no es capaz de traducir hay que pedir un bloque 
+
+	}
 	bread(DEVICE_IMAGE, b_id, b);
 	memmove(b+inodosx[fileDescriptor].posicion, buffer, numBytes); // Mueve desde buffer a posición mas b un número numBytes
 	bwrite(DEVICE_IMAGE, b_id, b); // Hay que volver a escribir en disco

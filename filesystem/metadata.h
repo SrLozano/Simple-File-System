@@ -58,7 +58,7 @@ typedef struct TipoInodoDisco{
         y cada bloque tiene 2048 Bytes  entonces se apunta a 5 bloques como máximo */
     unsigned int bloqueDirecto[NUMBER_DIRECT_BLOCKS];	            /* Número del bloque directo */
 
-    unsigned int integridad_boolean;            /* Booleano de integridad 0: No tiene integridad, 1: Tiene integridad*/
+    char integridad_boolean;            /* Booleano de integridad 0: No tiene integridad, 1: Tiene integridad. CHAR para ahorrar espacio. 1Byte*/
     unsigned int integridad ;                   /* cada vez que se hace close se sincroniza */
 
 } TipoInodoDisco;

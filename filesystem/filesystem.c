@@ -512,7 +512,11 @@ int readFile(int fileDescriptor, void *buffer, int numBytes)
 		/*  Si el puntero al fichero más lo que hay que leer es ya mayor que lo que de verdad contiene el fichero,
 			comprobaremos ya cuánto se puede leer como máximo */
 		numBytes = bloques_inodos[array[0]].inodos[array[1]].size - inodosx[fileDescriptor].posicion; // Lo que aún puedo leer
+		printf("NumBytes es: %i\n", numBytes);
+		printf("La primera mierda es: %i\n", bloques_inodos[array[0]].inodos[array[1]].size);
+		printf("La segunda mierda es: %i\n", inodosx[fileDescriptor].posicion);
 	}
+	printf("HOLA 1\n");
 
 	if(numBytes == 0){
 		return 0; // Devolvemos 0 porque el puntero de posición está al final del fichero
@@ -537,7 +541,7 @@ int readFile(int fileDescriptor, void *buffer, int numBytes)
 		inodosx[fileDescriptor].posicion += a_leer;
 		buffer = (char *) buffer + a_leer;
 	}while(resto_size > 0);
-
+	printf("HOLA 2\n");
 	return numBytes;
 }
 
@@ -547,9 +551,6 @@ int readFile(int fileDescriptor, void *buffer, int numBytes)
  */
 int writeFile(int fileDescriptor, void *buffer, int numBytes)
 {	
-	/*EN ESTA FUNCIÓN EXACTAMENTE LA MISMA DUDA QUE CON READ, SI ES MAS DE UN BLOQUE TENEMOS QUE 
-	ADAPTAR TANTO B COMO EL NUMERO DE VUELTAS A LA DE ESCRIBIR ABAJO*/
-
 	char b[BLOCK_SIZE]; // Reserva de espacio para lo que vamos a escribir
 	int b_id;
 
@@ -558,31 +559,46 @@ int writeFile(int fileDescriptor, void *buffer, int numBytes)
 
 	if(inodosx[fileDescriptor].posicion + numBytes > bloques_inodos[array[0]].inodos[array[1]].size){
 
-		/*  Si el puntero al fichero más lo que hay que leer es ya mayor que lo que de verdad contiene el fichero,
-			comprobaremos ya cuánto se puede leer como máximo */
-		numBytes = bloques_inodos[array[0]].inodos[array[1]].size - inodosx[fileDescriptor].posicion; // Lo que aún puedo leer
+		/*  Si el puntero al fichero más lo que hay que escribir es ya mayor que lo que de verdad contiene el fichero,
+			comprobaremos ya cuánto se puede escribir como máximo */
+		numBytes = BLOCK_SIZE - inodosx[fileDescriptor].posicion; // Lo que aún puedo leer
 	}
-
+		printf("NumBytes es: %i\n", numBytes);
+		printf("La primera mierda es: %i\n", bloques_inodos[array[0]].inodos[array[1]].size);
+		printf("La segunda mierda es: %i\n", inodosx[fileDescriptor].posicion);
 	if(numBytes == 0){
 		return 0; // Devolvemos 0 porque el puntero de posición está al final del fichero
 	}else if(numBytes < 0){
 		return -1; // Error
 	}
 
-	b_id = bmap(fileDescriptor, inodosx[fileDescriptor].posicion); // Saber cual es el bloque asociado. Dado un descriptor de fichero y un offset te devuelve el bloque asociado
-	if(b_id == -1){
-		return -1; // Control de errores. 
-	}
-	if(b_id == -3){ // El bloque directo aún no ha sido inicializado
-		int block_allocated = alloc();
-		int *array = malloc (sizeof(int)*2);
-		array = computePositionInodeMap(block_allocated); // Calculamos la posición dentro de nuestro sistema de ficheros
-		bloques_inodos[array[0]].inodos[array[1]].bloqueDirecto[0] = block_allocated; // ESTO NO SERÁ 0, SERÁ OTRA COSA
-	}
-	bread(DEVICE_IMAGE, b_id, b);
-	memmove(b+inodosx[fileDescriptor].posicion, buffer, numBytes); // Mueve desde buffer a posición mas b un número numBytes
-	bwrite(DEVICE_IMAGE, b_id, b); // Hay que volver a escribir en disco
-	inodosx[fileDescriptor].posicion += numBytes;
+	int resto_size;
+	
+	do {
+		//int bloque_id = inodosx[fileDescriptor].posicion/BLOCK_SIZE; // 2049/2048->bloque_id (1)
+		int bloque_offset = inodosx[fileDescriptor].posicion%BLOCK_SIZE; //2049%2048->bloque_offset (1)
+		int resto_leer_del_bloque = BLOCK_SIZE - bloque_offset; //2048 -1 
+		resto_size = numBytes - resto_leer_del_bloque; // 2048 - 2047 -> resto_size
+		int a_leer =  (resto_size <= 0) ? numBytes :resto_leer_del_bloque; //Esto es si se cumple pilla size y si no resto_size
+		
+
+		b_id = bmap(fileDescriptor, inodosx[fileDescriptor].posicion); // Saber cual es el bloque asociado. Dado un descriptor de fichero y un offset te devuelve el bloque asociado
+		if(b_id == -1){
+			return -1; // Control de errores. 
+		}
+		if(b_id == -3){ // El bloque directo aún no ha sido inicializado
+			int block_allocated = alloc();
+			int *array = malloc (sizeof(int)*2);
+			array = computePositionInodeMap(block_allocated); // Calculamos la posición dentro de nuestro sistema de ficheros
+			bloques_inodos[array[0]].inodos[array[1]].bloqueDirecto[0] = block_allocated; // ESTO NO SERÁ 0, SERÁ OTRA COSA
+		}
+		bread(DEVICE_IMAGE, b_id, b);
+		memmove(b+bloque_offset, buffer, a_leer); // Mueve desde posición mas b, a_leer bytes a buffer
+		bwrite(DEVICE_IMAGE, b_id, b);            // Hay que volver a escribir en disco
+		inodosx[fileDescriptor].posicion += a_leer;
+		buffer = (char *) buffer + a_leer;
+
+	}while(resto_size > 0);
 
 	return numBytes;
 }

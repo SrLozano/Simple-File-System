@@ -609,7 +609,38 @@ int writeFile(int fileDescriptor, void *buffer, int numBytes)
  */
 int lseekFile(int fileDescriptor, long offset, int whence)
 {
-	return -1;
+	/* Lo primero es tratar la referencia. Existen 3 casos
+	   FS_SEEK_CUR = Posición actual del puntero de posición
+	   FS_SEEK_BEGIN = Comienzo del fichero
+	   FS_SEEK_END = Final del fichero */
+
+	int *array = malloc (sizeof(int)*2);
+	array = computePositionInodeMap(fileDescriptor); // Calculamos la posición dentro de nuestro sistema de ficheros
+
+	if(whence == 0){ // Desplazar a FS_SEEK_BEGIN, comienzo del fichero
+		inodosx[fileDescriptor].posicion = 0;
+		return 0;
+
+	} else if (whence == bloques_inodos[array[0]].inodos[array[1]].size - 1) { // Desplazar a FS_SEEK_END, fin del fichero
+		inodosx[fileDescriptor].posicion = bloques_inodos[array[0]].inodos[array[1]].size - 1;
+		return 0;
+
+	} else if(whence == inodosx[fileDescriptor].posicion){ 	// Caso FS_SEEK_CUR
+		
+		if(inodosx[fileDescriptor].posicion + offset > bloques_inodos[array[0]].inodos[array[1]].size){
+
+			/*  Si el puntero al fichero más lo que hay que desplazar es ya mayor que lo que de verdad contiene el fichero,
+				se sale fuera de los límites y error */
+			return -1;
+		}
+
+		// Nueva posición de posición
+		inodosx[fileDescriptor].posicion = inodosx[fileDescriptor].posicion + offset; 
+		return 0;
+
+	} else { // Caso de error por no ser whence ninguna de las anteriores
+		return -1;
+	}
 }
 
 /*

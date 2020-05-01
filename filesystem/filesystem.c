@@ -222,6 +222,24 @@ int * computePositionInodeMap(int positionMap)
 }
 
 /*
+ * @brief 	computes the position of the inodeX
+ * @return 	position of the inodeX if success, -1 otherwise.
+ */
+int computePositionInodeX(int * arrayPosicion){
+	
+	if(arrayPosicion[0] == -1 || arrayPosicion[1] == -1){
+		return -1; // Control de errores
+	} else if(arrayPosicion[0] == 0){
+		// Si el inodo buscado está en el primer bloque la posición es directamente arrayPosicion[1]
+		return arrayPosicion[1];
+	} else {
+		// Si el inodo buscado está en el segundo bloque entonces hay que sumar el numero de inodos en cada bloque a arrayPos[1]
+		return arrayPosicion[1] + NUMBER_INODES_PER_BLOCK;
+	}
+
+}
+
+/*
  * @brief 	Allocates an inode
  * @return 	array of position of the inode if success, [-1, -1] otherwise.
  */
@@ -286,13 +304,14 @@ int alloc(void)
  */
 int ifree(int * arrayPosicion)
 {	
+	int posicion = computePositionInodeX(arrayPosicion);
 	// Comprobar validez inodo
-	if ((arrayPosicion[0]+1)*arrayPosicion[1] > NUMINODO){
+	if (posicion > NUMINODO){
 		return -1;
 	}
 
 	// Liberar inodo
-	i_map[(arrayPosicion[0]+1)*arrayPosicion[1]] = 0;
+	i_map[posicion] = 0;
 
 	return 1;
 }
@@ -416,9 +435,10 @@ int createFile(char *fileName)
 	// Apuntamos al bloque libre
 	bloques_inodos[inodo_id[0]].inodos[inodo_id[1]].bloqueDirecto[0] = b_id;
 
-	// Cambiamos la estructura auxiliar para indicar que está abierto y su posición
-	inodosx[(inodo_id[0]+1)*inodo_id[1]].posicion = 0;
-	inodosx[(inodo_id[0]+1)*inodo_id[1]].abierto = 1; //¿SEGURO QUE A 1?????
+	int posicion = computePositionInodeX(inodo_id);
+	// Cambiamos la estructura auxiliar para indicar que está cerrado y su posición
+	inodosx[posicion].posicion = 0;
+	inodosx[posicion].abierto = 0; 
 
 	return 0;
 }
@@ -435,6 +455,12 @@ int removeFile(char *fileName)
 
 	if(array[0] < 0 || array[1] < 0){
 		return -1; // Fallo, el fichero no existe en el sistema
+	}
+
+	int posicion = computePositionInodeX(array);
+
+	if (inodosx[posicion].abierto == 1){ // Si el fichero está abiero no se puede eliminar.
+		return -1; // Control de errores
 	}
 
 	bfree(bloques_inodos[array[0]].inodos[array[1]].bloqueDirecto);
@@ -465,16 +491,18 @@ int openFile(char *fileName)
 		return -1; // Fallo, el fichero no existe en el sistema
 	}
 
-	if(inodosx[(inodo_id[0]+1)*inodo_id[1]].abierto == 1){
+	int posicion = computePositionInodeX(inodo_id);
+
+	if(inodosx[posicion].abierto == 1){
 		return -2; // Fallo, el fichero ya está abierto
 	}
 
 	// Iniciar sesion de trabajo
-	inodosx[(inodo_id[0]+1)*inodo_id[1]].abierto = 1;
-	inodosx[(inodo_id[0]+1)*inodo_id[1]].posicion = 0;
+	inodosx[posicion].abierto = 1;
+	inodosx[posicion].posicion = 0;
 
 	// Devolvemos el número de inodo correspondiente al fichero, su descriptor
-	return (inodo_id[0]+1)*inodo_id[1];
+	return posicion;
 }
 
 /*

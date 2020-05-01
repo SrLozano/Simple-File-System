@@ -28,6 +28,12 @@ int * ialloc(void);
 int * computePositionInodeMap(int positionMap);
 
 /*
+ * @brief 	computes the position of the inodeX
+ * @return 	position of the inodeX if success, -1 otherwise.
+ */
+int computePositionInodeX(int * arrayPosicion);
+
+/*
  * @brief 	Allocates a block
  * @return 	block if success, -1 otherwise.
  */

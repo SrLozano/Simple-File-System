@@ -677,8 +677,39 @@ int lseekFile(int fileDescriptor, long offset, int whence)
  */
 
 int checkFile (char * fileName)
-{
-    return -2;
+{	
+	int *inodo_id = malloc (sizeof(int)*2);
+
+	// Buscar el inodo asociado al nombre
+	inodo_id = namei(fileName);
+
+	if(inodo_id[0] < 0 || inodo_id[1] < 0){
+		return -2; // Fallo, el fichero no existe en el sistema
+	}
+
+	if(bloques_inodos[inodo_id[0]].inodos[inodo_id[1]].integridad_boolean == 0){
+		return -2; // Control de errores, se comprueba si la función tiene integridad
+	}
+	
+	int posicion = computePositionInodeX(inodo_id);
+
+	if (inodosx[posicion].abierto == 1){ // Si el fichero está abiero no se se puede calcular integridad
+		return -2; // Control de errores
+	}
+
+	int size = bloques_inodos[inodo_id[0]].inodos[inodo_id[1]].size;
+	char *buffer [size];
+
+	readFile(posicion, buffer, size);
+
+	// Se calcula la integridad de manera manual
+	int integridad_calculada = CRC32(buffer, strlen(buffer));
+
+	if(bloques_inodos[inodo_id[0]].inodos[inodo_id[1]].integridad == integridad_calculada){
+		return 0;
+	}
+
+    return -1;
 }
 
 /*
@@ -688,6 +719,37 @@ int checkFile (char * fileName)
 
 int includeIntegrity (char * fileName)
 {
+	int *inodo_id = malloc (sizeof(int)*2);
+
+	// Buscar el inodo asociado al nombre
+	inodo_id = namei(fileName);
+
+	if(inodo_id[0] < 0 || inodo_id[1] < 0){
+		return -1; // Fallo, el fichero no existe en el sistema
+	}
+
+	if(bloques_inodos[inodo_id[0]].inodos[inodo_id[1]].integridad_boolean == 1){
+		return -2; // Control de errores, se comprueba si la función tiene integridad		
+	}
+	
+	//  SE DEBE CALCULAR INTEGRIDAD SI ESTÁ ABIERTO EL FICHERO???????
+	int posicion = computePositionInodeX(inodo_id);
+
+	if (inodosx[posicion].abierto == 1){ // Si el fichero está abiero no se se puede calcular integridad
+		return -2; // Control de errores
+	}
+
+	int size = bloques_inodos[inodo_id[0]].inodos[inodo_id[1]].size;
+	char *buffer [size];
+
+	readFile(posicion, buffer, size);
+
+	// Se calcula la integridad de manera manual
+	int integridad_calculada = CRC32(buffer, strlen(buffer));
+
+	//Ya hay integridad
+	bloques_inodos[inodo_id[0]].inodos[inodo_id[1]].integridad_boolean = 1;
+
     return -2;
 }
 

@@ -75,7 +75,7 @@ int main()
 	/////// OPEN FILE /////////
 
 	ret = openFile("/test.txt");
-	//int descriptor = ret;
+	int descriptor = ret;
 	if (ret < 0) // Debe ser 0 porque es donde tenemos ese archivo concreto, en el primer inodo que hay 
 	{	
 		printf("Hola: %i", ret);
@@ -84,10 +84,11 @@ int main()
 	}
 	fprintf(stdout, "%s%s%s%s%s", ANSI_COLOR_BLUE, "TEST openFile ", ANSI_COLOR_GREEN, "SUCCESS\n", ANSI_COLOR_RESET);
 
-/*
+
 	/////// WRITE FILE /////////
 		
 	char *buffer1 [] = {"Hola, esto es una prueba para el writeFile"};
+	printf("Buffer1 vale: %li", sizeof(*buffer1)); //¿Va con puntero o no?
 	ret = writeFile(descriptor, buffer1, sizeof(buffer1));
 	if (ret <= 0) // Debe ser mayor que 0 al devolvernos los bytes escritos
 	{	
@@ -112,7 +113,7 @@ int main()
 	printf("Descriptor con readFile vale: %i\n", descriptor);
 	printf("El contenido del buffer2 es: %s\n", *buffer2);
 	fprintf(stdout, "%s%s%s%s%s", ANSI_COLOR_BLUE, "TEST readFile ", ANSI_COLOR_GREEN, "SUCCESS\n", ANSI_COLOR_RESET);
-*/
+
 
 	/////// LSEEK FILE /////////
 

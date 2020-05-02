@@ -539,8 +539,8 @@ int readFile(int fileDescriptor, void *buffer, int numBytes)
 			comprobaremos ya cuánto se puede leer como máximo */
 		numBytes = bloques_inodos[array[0]].inodos[array[1]].size - inodosx[fileDescriptor].posicion; // Lo que aún puedo leer
 		printf("NumBytes es: %i\n", numBytes);
-		printf("La primera mierda es: %i\n", bloques_inodos[array[0]].inodos[array[1]].size);
-		printf("La segunda mierda es: %i\n", inodosx[fileDescriptor].posicion);
+		printf("La primera parte es: %i\n", bloques_inodos[array[0]].inodos[array[1]].size);
+		printf("La segunda parte es: %i\n", inodosx[fileDescriptor].posicion);
 	}
 	printf("HOLA 1\n");
 
@@ -590,13 +590,14 @@ int writeFile(int fileDescriptor, void *buffer, int numBytes)
 		numBytes = BLOCK_SIZE - inodosx[fileDescriptor].posicion; // Lo que aún puedo leer
 	}
 		printf("NumBytes es: %i\n", numBytes);
-		printf("La primera mierda es: %i\n", bloques_inodos[array[0]].inodos[array[1]].size);
-		printf("La segunda mierda es: %i\n", inodosx[fileDescriptor].posicion);
+		printf("La primera parte es: %i\n", bloques_inodos[array[0]].inodos[array[1]].size);
+		printf("La segunda parte es: %i\n", inodosx[fileDescriptor].posicion);
 	if(numBytes == 0){
 		return 0; // Devolvemos 0 porque el puntero de posición está al final del fichero
 	}else if(numBytes < 0){
 		return -1; // Error
 	}
+	printf("HOLA 1\n");
 
 	int resto_size;
 	
@@ -701,7 +702,8 @@ int checkFile (char * fileName)
 	readFile(posicion, buffer, size);
 
 	// Se calcula la integridad de manera manual
-	int integridad_calculada = CRC32(buffer, strlen(buffer));
+	int integridad_calculada = 0;
+	//int integridad_calculada = CRC32(buffer, strlen(buffer));
 
 	if(bloques_inodos[inodo_id[0]].inodos[inodo_id[1]].integridad == integridad_calculada){
 		return 0;
@@ -743,7 +745,11 @@ int includeIntegrity (char * fileName)
 	readFile(posicion, buffer, size);
 
 	// Se calcula la integridad de manera manual
-	int integridad_calculada = CRC32(buffer, strlen(buffer));
+	int integridad_calculada = 0;
+	//int integridad_calculada = CRC32(buffer, strlen(buffer));
+
+	// Incluimos integridad
+	bloques_inodos[inodo_id[0]].inodos[inodo_id[1]].integridad = integridad_calculada;
 
 	//Ya hay integridad
 	bloques_inodos[inodo_id[0]].inodos[inodo_id[1]].integridad_boolean = 1;
@@ -780,7 +786,7 @@ int openFileIntegrity(char *fileName)
 
 	if(ret == -2){ // Ha ocurrido un error
 		return -3;
-	} else if (ret = -1){ // Está corrupto
+	} else if (ret == -1){ // Está corrupto
 		return -2;
 	}
 
@@ -818,8 +824,8 @@ int closeFileIntegrity(int fileDescriptor)
 	readFile(fileDescriptor, buffer, size);
 
 	// Se calcula la integridad de manera manual
-	int integridad_calculada = CRC32(buffer, strlen(buffer));
-
+	int integridad_calculada = 0;
+	//int integridad_calculada = CRC32(buffer, strlen(buffer));
 	// Se actualiza la integridad
 	bloques_inodos[inodo_id[0]].inodos[inodo_id[1]].integridad = integridad_calculada;
 	

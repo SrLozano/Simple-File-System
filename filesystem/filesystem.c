@@ -480,8 +480,6 @@ int removeFile(char *fileName)
  */
 int openFile(char *fileName)
 {	
-	// FALTA COMPROBAR INTEGRIDAD UNA VEZ LA TENGAMOS ??
-
 	int *inodo_id = malloc (sizeof(int)*2);
 
 	// Buscar el inodo asociado al nombre
@@ -758,9 +756,40 @@ int includeIntegrity (char * fileName)
  * @return	The file descriptor if possible, -1 if file does not exist, -2 if the file is corrupted, -3 in case of error
  */
 int openFileIntegrity(char *fileName)
-{
+{	
+	int *inodo_id = malloc (sizeof(int)*2);
 
-    return -2;
+	// Buscar el inodo asociado al nombre
+	inodo_id = namei(fileName);
+
+	if(inodo_id[0] < 0 || inodo_id[1] < 0){
+		return -1; // Fallo, el fichero no existe en el sistema
+	}
+
+	int posicion = computePositionInodeX(inodo_id);
+
+	if(inodosx[posicion].abierto == 1){
+		return -3; // Fallo, el fichero ya está abierto
+	}
+
+	if(bloques_inodos[inodo_id[0]].inodos[inodo_id[1]].integridad_boolean == 0){
+		return -3; // Control de errores, se comprueba si el fichero tiene integridad		
+	}
+
+	int ret = checkFile(fileName);
+
+	if(ret == -2){ // Ha ocurrido un error
+		return -3;
+	} else if (ret = -1){ // Está corrupto
+		return -2;
+	}
+
+	// Iniciar sesion de trabajo
+	inodosx[posicion].abierto = 1;
+	inodosx[posicion].posicion = 0;
+
+	// Devolvemos el número de inodo correspondiente al fichero, su descriptor
+	return posicion;
 }
 
 /*
@@ -768,8 +797,37 @@ int openFileIntegrity(char *fileName)
  * @return	0 if success, -1 otherwise.
  */
 int closeFileIntegrity(int fileDescriptor)
-{
-    return -1;
+{	
+	// Comprobamos el descriptor
+	if((fileDescriptor < 0) || (fileDescriptor > NUMINODO-1)){
+		return -1;
+	}
+
+	// Calculamos la posición dentro de nuestro FS
+	int *inodo_id = malloc (sizeof(int)*2);
+	inodo_id = computePositionInodeMap(fileDescriptor);
+
+	// Comprobamos si tiene integridad
+	if(bloques_inodos[inodo_id[0]].inodos[inodo_id[1]].integridad_boolean == 0){
+		return -1; // Control de errores, se comprueba si la función tiene integridad
+	}
+	
+	int size = bloques_inodos[inodo_id[0]].inodos[inodo_id[1]].size;
+	char *buffer [size];
+
+	readFile(fileDescriptor, buffer, size);
+
+	// Se calcula la integridad de manera manual
+	int integridad_calculada = CRC32(buffer, strlen(buffer));
+
+	// Se actualiza la integridad
+	bloques_inodos[inodo_id[0]].inodos[inodo_id[1]].integridad = integridad_calculada;
+	
+	// Terminar sesion de trabajo
+	inodosx[fileDescriptor].abierto = 0;
+	inodosx[fileDescriptor].posicion = 0;
+
+	return 0;
 }
 
 /*
@@ -778,6 +836,7 @@ int closeFileIntegrity(int fileDescriptor)
  */
 int createLn(char *fileName, char *linkName)
 {
+	
     return -1;
 }
 

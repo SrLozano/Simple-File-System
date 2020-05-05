@@ -126,6 +126,32 @@ int main()
 	printf("El contenido del buffer2 es: %s\n", buffer2);
 	fprintf(stdout, "%s%s%s%s%s", ANSI_COLOR_BLUE, "TEST readFile ", ANSI_COLOR_GREEN, "SUCCESS\n", ANSI_COLOR_RESET);
 
+	/////// CREATE FILE /////////
+
+	ret = createFile("/fichero.txt");
+	if (ret != 0)
+	{
+		fprintf(stdout, "%s%s%s%s%s", ANSI_COLOR_BLUE, "TEST createFile ", ANSI_COLOR_RED, "FAILED\n", ANSI_COLOR_RESET);
+		return -1;
+	}
+	fprintf(stdout, "%s%s%s%s%s", ANSI_COLOR_BLUE, "TEST createFile ", ANSI_COLOR_GREEN, "SUCCESS\n", ANSI_COLOR_RESET);
+
+	/////// CREAR ENLACE SIMBOLICO ////
+	ret = createLn("/fichero.txt", "enlace");
+	if (ret < 0) // 
+	{	
+		fprintf(stdout, "%s%s%s%s%s", ANSI_COLOR_BLUE, "TEST createLn ", ANSI_COLOR_RED, "FAILED\n", ANSI_COLOR_RESET);
+		return -1;
+	}
+
+	/////// ELIMINAR ENLACE SIMBOLICO ////
+	ret = removeLn("enlace");
+	if (ret < 0) // 
+	{	
+		fprintf(stdout, "%s%s%s%s%s", ANSI_COLOR_BLUE, "TEST removeLn ", ANSI_COLOR_RED, "FAILED\n", ANSI_COLOR_RESET);
+		return -1;
+	}
+
 	/////// CLOSE FILE /////////
 
 	ret = closeFile(0); // El archivo  debe ser cerrado antes de hacer unmount

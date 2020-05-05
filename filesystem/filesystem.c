@@ -853,7 +853,6 @@ int closeFileIntegrity(int fileDescriptor)
  */
 int createLn(char *fileName, char *linkName)
 {
-	int b_id; 
 	int *inodo_id;
 
 	inodo_id = ialloc(); 		/*Función que nos identifica el primer inodo libre*/
@@ -866,7 +865,10 @@ int createLn(char *fileName, char *linkName)
 	for (int i=0; i<BLOCKS_FOR_INODES; i++) {
 		for(int j=0; j<NUMBER_INODES_PER_BLOCK; j++){
 			// El nombre del link ya está en uso
-        	if(strcmp(linkName, bloques_inodos[i].inodos[j].nombre) == 0){ return -2;} 
+        	if(strcmp(linkName, bloques_inodos[i].inodos[j].nombre) == 0){ 
+				printf("Holaaaaaa");
+				return -2;
+				} 
 		}
     }
 
@@ -875,12 +877,14 @@ int createLn(char *fileName, char *linkName)
 	// Comprobamos si el fichero a ser enlazado existe
 	for (int i=0; i<BLOCKS_FOR_INODES; i++) {
 		for(int j=0; j<NUMBER_INODES_PER_BLOCK; j++){
-			// El nombre del link ya está en uso
         	if(strcmp(fileName, bloques_inodos[i].inodos[j].nombre) == 0){ aux = 0;} 
 		}
     }
 
-	if (aux == -1) {return -1;} // No se puede enlazar al fichero puesto que no existe en el SF
+	if (aux == -1) {
+		printf("Holaaaaaa1");
+		return -1;// No se puede enlazar al fichero puesto que no existe en el SF
+	} 
 
 	strcpy(bloques_inodos[inodo_id[0]].inodos[inodo_id[1]].nombre, linkName);
 	bloques_inodos[inodo_id[0]].inodos[inodo_id[1]].tipo_enlace = 1; // Tipo fichero
@@ -895,5 +899,23 @@ int createLn(char *fileName, char *linkName)
  */
 int removeLn(char *linkName)
 {
-    return -2;
+	int *array = malloc (sizeof(int)*2);
+
+	array = namei(linkName);
+
+	if(array[0] < 0 || array[1] < 0){
+		return -1; // Fallo, el fichero no existe en el sistema
+	}
+
+	if(bloques_inodos[array[0]].inodos[array[1]].tipo_enlace == 0){
+		return -2; // Control de errores, el inodo no es un enlace simbólico
+	}
+	
+	memset(&(bloques_inodos[array[0]].inodos[array[1]]), 0, sizeof(TipoInodoDisco) ); // Rellenamos a 0
+	
+	if(ifree(array) == -1){  // Liberamos el inodo
+		return -2;
+	}
+	
+	return 0;
 }

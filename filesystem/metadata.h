@@ -36,14 +36,16 @@ struct Superblock;
 
 typedef struct TipoSuperbloque{
     unsigned int numMagico;	                   /* Número mágico del superbloque: 0x000D5500 */
-    unsigned int numBloquesMapaInodos;         /* Número de bloques del mapa inodos */
-    unsigned int numBloquesMapaDatos;          /* Número de bloques del mapa  datos */
+    //unsigned int numBloquesMapaInodos;         /* Número de bloques del mapa inodos */
+    //unsigned int numBloquesMapaDatos;          /* Número de bloques del mapa  datos */
     unsigned int numInodos; 	                 /* Número de inodos en el dispositivo */
     unsigned int primerInodo;	                 /* Número del bloque del 1º inodo del disp. (inodo raíz) */
     unsigned int numBloquesDatos;              /* Número de bloques de datos en el disp. */
     unsigned int primerBloqueDatos;            /* Número de bloque del 1º bloque de datos */
     unsigned int tamDispositivo;	             /* Tamaño total del disp. (en bytes) */
-    char relleno[BLOCK_SIZE-8*sizeof(int)];    /* Campo de relleno (para completar un bloque entero en el superbloque) */
+    char i_map[NUMINODO/8] ; 			             /* Mapa de bits con los inodos (usado: i_map[x]=1 | libre: i_map[x]=0) */ 
+    char b_map[NUMBLOQUESDATO/8] ; 	           /* Mapa de bits con los bloques (usado: b_map[x]=1 | libre: b_map[x]=0) */
+    char relleno[BLOCK_SIZE-8*sizeof(int)-NUMINODO/8 -NUMBLOQUESDATO/8];    /* Campo de relleno (para completar un bloque entero en el superbloque) */
 } TipoSuperbloque;
 
 
@@ -51,15 +53,18 @@ typedef struct TipoInodoDisco{
     /*  En el sistema considerado solo se tendrá soporte para ficheros y no directórios, tal y 
         como se especifica en los requisitos */
     
-    char nombre[MAX_LENGHT];	                  /* Nombre del fichero/directorio asociado */ 
-    unsigned int size;	                        /* Tamaño actual del fichero en bytes */
+    char nombre[MAX_LENGHT];	              /* Nombre del fichero asociado */ 
+    uint16_t size;	                        /* Tamaño actual del fichero en bytes */
 
     /*  Cada inodo apunta a un fichero y como el tamaño máximo de un fichero es 10240 Bytes
         y cada bloque tiene 2048 Bytes  entonces se apunta a 5 bloques como máximo */
-    unsigned int bloqueDirecto[NUMBER_DIRECT_BLOCKS];	            /* Número del bloque directo */
+    uint8_t bloqueDirecto[NUMBER_DIRECT_BLOCKS];	            /* Número del bloque directo */
 
-    char integridad_boolean;            /* Booleano de integridad 0: No tiene integridad, 1: Tiene integridad. CHAR para ahorrar espacio. 1Byte*/
-    unsigned int integridad ;                   /* cada vez que se hace close se sincroniza */
+    char integridad_boolean;             /* Booleano de integridad 0: No tiene integridad, 1: Tiene integridad. CHAR para ahorrar espacio. 1Byte*/
+    uint32_t integridad ;                /* cada vez que se hace close se sincroniza */
+    
+    char tipo_enlace;                    /* Para distinguir si se trata de un enlace simbólico o no */
+    char nombre_apuntado[MAX_LENGHT];	   /* Nombre del fichero al que apunta el enlace simbólico */ 
 
 } TipoInodoDisco;
 
@@ -71,22 +76,3 @@ typedef struct TipoInodosBloque{
   char relleno[BLOCK_SIZE-NUMBER_INODES_PER_BLOCK*sizeof(TipoInodoDisco)];   /* Campo relleno */
 
 } TipoInodosBloque;
-
-
-/*
-typedef struct INode {
-  char *name; //Name of the inodo
-  int pointer; //The pointer to the block
-  int directBlock; //Block associated with the inode
-  int integrity; //Integrity verification
-  int bytesFilled; //Number of bytes filled in the block
-  int open; // 1 = Open, 0 = Close
-} INode;
-
-typedef struct Superblock {
-  long diskSize; //Disk Size
-  int INodeMap; //Map of the inodes availables
-  struct INode iNodes[MAX_FILES]; //Array
-  int checksum; //Utilizado para comprobar la integridad
-} Superblock;
-*/

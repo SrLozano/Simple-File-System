@@ -49,7 +49,7 @@ int ifree(int * arrayPosicion);
  * @brief 	Liberates a block
  * @return  1 if success, -1 if fail
  */
-int bfree(unsigned int * arrayBloquesDirectos);
+int bfree(uint8_t * arrayBloquesDirectos);
 
 /*
  * @brief 	Search an inode looking at the name

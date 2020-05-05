@@ -87,9 +87,9 @@ int main()
 
 	/////// WRITE FILE /////////
 		
-	char *buffer1 [] = {"Hola, esto es una prueba para el writeFile"};
-	printf("Buffer1 vale: %li", sizeof(*buffer1)); //¿Va con puntero o no?
-	ret = writeFile(descriptor, buffer1, sizeof(buffer1));
+	char buffer1 [] = {"Hola, esto es una prueba para el writeFile"};
+	printf("Buffer1 vale: %li", strlen(buffer1)); //¿Va con puntero o no?
+	ret = writeFile(descriptor, buffer1, strlen(buffer1));
 	if (ret <= 0) // Debe ser mayor que 0 al devolvernos los bytes escritos
 	{	
 		fprintf(stdout, "%s%s%s%s%s", ANSI_COLOR_BLUE, "TEST writeFile ", ANSI_COLOR_RED, "FAILED\n", ANSI_COLOR_RESET);
@@ -97,14 +97,38 @@ int main()
 	}
 	printf("Descriptor con writeFile vale: %i\n", descriptor);
 	printf("Ret con writeFile vale: %i\n", ret);
-	printf("El contenido del buffer1 es: %s\n", *buffer1);
+	printf("El contenido del buffer1 es: %s\n", buffer1);
 	fprintf(stdout, "%s%s%s%s%s", ANSI_COLOR_BLUE, "TEST writeFile ", ANSI_COLOR_GREEN, "SUCCESS\n", ANSI_COLOR_RESET);
+
+
+	/////// CLOSE FILE /////////
+
+	ret = closeFile(0); // El archivo se debe haber creado en el primer inodo libre
+	if (ret != 0)
+	{
+		fprintf(stdout, "%s%s%s%s%s", ANSI_COLOR_BLUE, "TEST closeFile ", ANSI_COLOR_RED, "FAILED\n", ANSI_COLOR_RESET);
+		return -1;
+	}
+	fprintf(stdout, "%s%s%s%s%s", ANSI_COLOR_BLUE, "TEST closeFile ", ANSI_COLOR_GREEN, "SUCCESS\n", ANSI_COLOR_RESET);
+
+
+	/////// OPEN FILE /////////
+
+	ret = openFile("/test.txt");
+	int descriptor = ret;
+	if (ret < 0) // Debe ser 0 porque es donde tenemos ese archivo concreto, en el primer inodo que hay 
+	{	
+		printf("Hola: %i", ret);
+		fprintf(stdout, "%s%s%s%s%s", ANSI_COLOR_BLUE, "TEST openFile ", ANSI_COLOR_RED, "FAILED\n", ANSI_COLOR_RESET);
+		return -1;
+	}
+	fprintf(stdout, "%s%s%s%s%s", ANSI_COLOR_BLUE, "TEST openFile ", ANSI_COLOR_GREEN, "SUCCESS\n", ANSI_COLOR_RESET);
 
 
 	/////// READ FILE /////////
 
-	char *buffer2 [BLOCK_SIZE];
-	ret = readFile(descriptor, buffer2, 2048);
+	char *buffer2 [strlen(buffer1)];
+	ret = readFile(descriptor, buffer2, strlen(buffer1));
 	if (ret < 0) // 
 	{	
 		fprintf(stdout, "%s%s%s%s%s", ANSI_COLOR_BLUE, "TEST readFile ", ANSI_COLOR_RED, "FAILED\n", ANSI_COLOR_RESET);

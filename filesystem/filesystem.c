@@ -20,14 +20,15 @@
 //Inicializaciones de las estructuras a usar
 TipoSuperbloque superbloque[1]; //Array de structs (typedef, hemos definido el tipo de Tiposuperbloque[0]) para distintos FS
 TipoInodosBloque bloques_inodos[2];
-char i_map[NUMINODO] ; 			// Mapa de bits con los inodos (usado: i_map[x]=1 | libre: i_map[x]=0)    
-char b_map[NUMBLOQUESDATO] ; 	// Mapa de bits con los bloques (usado: b_map[x]=1 | libre: b_map[x]=0)
+char i_map[NUMINODO/8] ; 			// Mapa de bits con los inodos (usado: i_map[x]=1 | libre: i_map[x]=0)    
+char b_map[NUMBLOQUESDATO/8] ; 	// Mapa de bits con los bloques (usado: b_map[x]=1 | libre: b_map[x]=0)
 
 
 struct //Información extra de apoyo que no va a disco, se pierde al cargar en disco
 {
 	//Nos indica por cada inodo si está abierto y en qué posición está en caso de que esté abierto.
 	int posicion;
+	//AQUÍ TAMBIEN PODRÍA SER UN CHAR Y AHORRAS ESPACIO
 	int abierto; // 0: cerrado, 1: abierto
 
 } inodosx[NUMINODO];
@@ -52,17 +53,18 @@ int mkFS(long deviceSize)
 	superbloque[0].numBloquesMapaInodos = 1; 			// Un bloque es suficiente para almacenar 48 inodos
     superbloque[0].numBloquesMapaDatos  = 1; 			// Un bloque es suficiente para almacenar los bloques correspondientes al tamanyo maximo de disco
     superbloque[0].primerInodo          = 3; 			// Número que indica el bloque del primer inodo
-    superbloque[0].numBloquesDatos      = NUMBLOQUESDATO;
+    int numero_bloques_datos = (deviceSize/BLOCK_SIZE) - 3; // Número de bloques menos super, i-nodo, mapasn
+	superbloque[0].numBloquesDatos      = numero_bloques_datos;
     superbloque[0].primerBloqueDatos    = 3 + 2;		// El primer bloque de datos estará después de los inodos, que están todos en 2 bloques 
 	superbloque[0].tamDispositivo = deviceSize; 		// Se guardan los metadatos de deviceSize
 
 	// Se rellenan los mapas de inodos y bloques a 0 (Free)
 	for (int i=0; i<superbloque[0].numInodos; i++) {
-        i_map[i] = 0; // free
+        bitmap_setbit(i_map, i, 0); // free
     }
 
     for (int i=0; i<superbloque[0].numBloquesDatos; i++) {
-        b_map[i] = 0; // free
+        bitmap_setbit(b_map, i, 0); // free
     }	
 
 	/* Si finalmente hemos decidido meter INTEGRITY HAY QUE INICIARLIZARLO AQUÍ */
@@ -251,9 +253,9 @@ int* ialloc(void)
 	
 	for(i=0; i<NUMINODO; i++){ // Recorremos el mapa de inodos
 		
-		if(i_map[i] == 0){  // Primer inodo libre, indicado por el mapa
+		if(bitmap_getbit(i_map, i) == 0){  // Primer inodo libre, indicado por el mapa
             
-			i_map[i] = 1;	// inodo ocupado ahora
+			bitmap_setbit(i_map, i, 1); // inodo ocupado ahora
 			array = computePositionInodeMap(i); // Calculamos la posición dentro de nuestro sistema de ficheros
 			
 			if (array[0] == -1 || array[1]==-1)	{return array; } // Control de errores, no se ha encontrado inodo
@@ -285,9 +287,9 @@ int alloc(void)
 
 	for(i = 0; i<superbloque[0].numBloquesDatos; i++){  //Recorremos todos los bloques de de datos
 
-		if(b_map[i] == 0){              // Primer bloque libre, indicado por el mapa
+		if(bitmap_getbit(b_map, i) == 0){              // Primer bloque libre, indicado por el mapa
 
-			b_map[i] = 1;               // Bloque ocupado ahora
+			bitmap_setbit(b_map, i, 1); // Bloque ocupado ahora
 			memset(b, 0, BLOCK_SIZE);   // Rellenamos a 0 el bloque
 			bwrite(DEVICE_IMAGE, superbloque[0].primerBloqueDatos + i, b); // Lo grabamos a disco
 
@@ -311,7 +313,7 @@ int ifree(int * arrayPosicion)
 	}
 
 	// Liberar inodo
-	i_map[posicion] = 0;
+	bitmap_setbit(i_map, posicion, 0); // free
 
 	return 1;
 }
@@ -332,7 +334,7 @@ int bfree(unsigned int * arrayBloquesDirectos)
 	// Liberamos los bloquea en el mapa de bloques en uso
 	for(int i=0; i<NUMBER_DIRECT_BLOCKS; i++){
 		if(arrayBloquesDirectos[i] != -1){
-			b_map[arrayBloquesDirectos[i]] = 0;
+			bitmap_setbit(b_map, arrayBloquesDirectos[i], 0);
 		}
 	}
 	

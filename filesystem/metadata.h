@@ -32,7 +32,7 @@ struct INode;
 struct Superblock;
 
 #define NUMINODO 48 //Habrá tantos inodos como archivos sea capaz de soportar el sistema
-#define NUMBLOQUESDATO 20
+#define NUMBLOQUESDATO 300 //Número maximo de bloques que habrá pues son 600KB
 
 typedef struct TipoSuperbloque{
     unsigned int numMagico;	                   /* Número mágico del superbloque: 0x000D5500 */

@@ -63,7 +63,7 @@ typedef struct TipoInodoDisco{
     char integridad_boolean;             /* Booleano de integridad 0: No tiene integridad, 1: Tiene integridad. CHAR para ahorrar espacio. 1Byte*/
     uint32_t integridad ;                /* cada vez que se hace close se sincroniza */
     
-    char tipo_enlace;                    /* Para distinguir si se trata de un enlace simbólico o no */
+    char tipo_enlace;                    /* Para distinguir si se trata de un enlace simbólico o no 0 fichero, 1 Enlace*/
     char nombre_apuntado[MAX_LENGHT];	   /* Nombre del fichero al que apunta el enlace simbólico */ 
 
 } TipoInodoDisco;

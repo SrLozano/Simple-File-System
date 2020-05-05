@@ -101,33 +101,21 @@ int main()
 	fprintf(stdout, "%s%s%s%s%s", ANSI_COLOR_BLUE, "TEST writeFile ", ANSI_COLOR_GREEN, "SUCCESS\n", ANSI_COLOR_RESET);
 
 
-	/////// CLOSE FILE /////////
+	/////// LSEEK FILE /////////
 
-	ret = closeFile(0); // El archivo se debe haber creado en el primer inodo libre
+	ret = lseekFile(descriptor, 13678236, 2); // Debería llevar el puntero a la posición 0 y devolver un 0
 	if (ret != 0)
 	{
-		fprintf(stdout, "%s%s%s%s%s", ANSI_COLOR_BLUE, "TEST closeFile ", ANSI_COLOR_RED, "FAILED\n", ANSI_COLOR_RESET);
+		fprintf(stdout, "%s%s%s%s%s", ANSI_COLOR_BLUE, "TEST lseekFile ", ANSI_COLOR_RED, "FAILED\n", ANSI_COLOR_RESET);
 		return -1;
 	}
-	fprintf(stdout, "%s%s%s%s%s", ANSI_COLOR_BLUE, "TEST closeFile ", ANSI_COLOR_GREEN, "SUCCESS\n", ANSI_COLOR_RESET);
-
-
-	/////// OPEN FILE /////////
-
-	ret = openFile("/test.txt");
-	int descriptor = ret;
-	if (ret < 0) // Debe ser 0 porque es donde tenemos ese archivo concreto, en el primer inodo que hay 
-	{	
-		printf("Hola: %i", ret);
-		fprintf(stdout, "%s%s%s%s%s", ANSI_COLOR_BLUE, "TEST openFile ", ANSI_COLOR_RED, "FAILED\n", ANSI_COLOR_RESET);
-		return -1;
-	}
-	fprintf(stdout, "%s%s%s%s%s", ANSI_COLOR_BLUE, "TEST openFile ", ANSI_COLOR_GREEN, "SUCCESS\n", ANSI_COLOR_RESET);
+	fprintf(stdout, "%s%s%s%s%s", ANSI_COLOR_BLUE, "TEST lseekFile ", ANSI_COLOR_GREEN, "SUCCESS\n", ANSI_COLOR_RESET);
+	printf("El retorno es: %i\n", ret);
 
 
 	/////// READ FILE /////////
 
-	char *buffer2 [strlen(buffer1)];
+	char buffer2 [strlen(buffer1)];
 	ret = readFile(descriptor, buffer2, strlen(buffer1));
 	if (ret < 0) // 
 	{	
@@ -135,32 +123,8 @@ int main()
 		return -1;
 	}
 	printf("Descriptor con readFile vale: %i\n", descriptor);
-	printf("El contenido del buffer2 es: %s\n", *buffer2);
+	printf("El contenido del buffer2 es: %s\n", buffer2);
 	fprintf(stdout, "%s%s%s%s%s", ANSI_COLOR_BLUE, "TEST readFile ", ANSI_COLOR_GREEN, "SUCCESS\n", ANSI_COLOR_RESET);
-
-
-	/////// LSEEK FILE /////////
-
-	ret = lseekFile(0, 10, 0); // Debería llevar el puntero a la posición 0 y devolver un 0
-	if (ret != 0)
-	{
-		fprintf(stdout, "%s%s%s%s%s", ANSI_COLOR_BLUE, "TEST removeFile ", ANSI_COLOR_RED, "FAILED\n", ANSI_COLOR_RESET);
-		return -1;
-	}
-	fprintf(stdout, "%s%s%s%s%s", ANSI_COLOR_BLUE, "TEST removeFile ", ANSI_COLOR_GREEN, "SUCCESS\n", ANSI_COLOR_RESET);
-	printf("El retorno es: %i\n", ret);
-
-
-	/////// REMOVE FILE /////////
-
-	ret = removeFile("/test.txt");
-	if (ret != 0)
-	{
-		fprintf(stdout, "%s%s%s%s%s", ANSI_COLOR_BLUE, "TEST removeFile ", ANSI_COLOR_RED, "FAILED\n", ANSI_COLOR_RESET);
-		return -1;
-	}
-	fprintf(stdout, "%s%s%s%s%s", ANSI_COLOR_BLUE, "TEST removeFile ", ANSI_COLOR_GREEN, "SUCCESS\n", ANSI_COLOR_RESET);
-
 
 	/////// CLOSE FILE /////////
 
@@ -172,6 +136,15 @@ int main()
 	}
 	fprintf(stdout, "%s%s%s%s%s", ANSI_COLOR_BLUE, "TEST closeFile ", ANSI_COLOR_GREEN, "SUCCESS\n", ANSI_COLOR_RESET);
 
+	/////// REMOVE FILE /////////
+
+	ret = removeFile("/test.txt");
+	if (ret != 0)
+	{
+		fprintf(stdout, "%s%s%s%s%s", ANSI_COLOR_BLUE, "TEST removeFile ", ANSI_COLOR_RED, "FAILED\n", ANSI_COLOR_RESET);
+		return -1;
+	}
+	fprintf(stdout, "%s%s%s%s%s", ANSI_COLOR_BLUE, "TEST removeFile ", ANSI_COLOR_GREEN, "SUCCESS\n", ANSI_COLOR_RESET);
 
 	////// UNMOUNT /////////
 	ret = unmountFS();

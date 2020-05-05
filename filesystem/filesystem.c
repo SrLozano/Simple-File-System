@@ -428,6 +428,7 @@ int createFile(char *fileName)
     }
 
 	strcpy(bloques_inodos[inodo_id[0]].inodos[inodo_id[1]].nombre, fileName);
+	bloques_inodos[inodo_id[0]].inodos[inodo_id[1]].tipo_enlace = 0; // Tipo fichero
 
 	// Apuntamos al bloque libre
 	bloques_inodos[inodo_id[0]].inodos[inodo_id[1]].bloqueDirecto[0] = b_id;
@@ -547,13 +548,13 @@ int readFile(int fileDescriptor, void *buffer, int numBytes)
 	}
 	int resto_size;
 	
+
 	do {
 		//int bloque_id = inodosx[fileDescriptor].posicion/BLOCK_SIZE; // 2049/2048->bloque_id (1)
 		int bloque_offset = inodosx[fileDescriptor].posicion%BLOCK_SIZE; //2049%2048->bloque_offset (1)
 		int resto_leer_del_bloque = BLOCK_SIZE - bloque_offset; //2048 -1 
 		resto_size = numBytes - resto_leer_del_bloque; // 2048 - 2047 -> resto_size
 		int a_leer =  (resto_size <= 0) ? numBytes :resto_leer_del_bloque; //Esto es si se cumple pilla size y si no resto_size
-		
 		b_id = bmap(fileDescriptor, inodosx[fileDescriptor].posicion); // Saber cual es el bloque asociado. Dado un descriptor de fichero y un offset te devuelve el bloque asociado
 		if(b_id == -1){
 			return -1; // Control de errores. 
@@ -584,9 +585,9 @@ int writeFile(int fileDescriptor, void *buffer, int numBytes)
 			comprobaremos ya cuánto se puede escribir como máximo */
 		numBytes = 5*BLOCK_SIZE - inodosx[fileDescriptor].posicion; // Lo que aún puedo leer
 	}
-		printf("NumBytes es: %i\n", numBytes);
-		printf("La primera parte es: %i\n", bloques_inodos[array[0]].inodos[array[1]].size);
-		printf("La segunda parte es: %i\n", inodosx[fileDescriptor].posicion);
+		//printf("NumBytes es: %i\n", numBytes);
+		//printf("La primera parte es: %i\n", bloques_inodos[array[0]].inodos[array[1]].size);
+		//printf("La segunda parte es: %i\n", inodosx[fileDescriptor].posicion);
 	if(numBytes == 0){
 		return 0; // Devolvemos 0 porque el puntero de posición está al final del fichero
 	}else if(numBytes < 0){
@@ -617,7 +618,7 @@ int writeFile(int fileDescriptor, void *buffer, int numBytes)
 		memmove(b+bloque_offset, buffer, a_leer); // Mueve desde posición mas b, a_leer bytes a buffer
 		bwrite(DEVICE_IMAGE, b_id, b);            // Hay que volver a escribir en disco
 		bread(DEVICE_IMAGE, b_id, b);
-		printf("El bloque escrito es:%s" , b);
+		//printf("El bloque escrito es:%s" , b);
 		inodosx[fileDescriptor].posicion += a_leer;
 		buffer = (char *) buffer + a_leer;
 
@@ -642,15 +643,15 @@ int lseekFile(int fileDescriptor, long offset, int whence)
 	int *array = malloc (sizeof(int)*2);
 	array = computePositionInodeMap(fileDescriptor); // Calculamos la posición dentro de nuestro sistema de ficheros
 
-	if(whence == 0){ // Desplazar a FS_SEEK_BEGIN, comienzo del fichero
+	if(whence == 2){ // Desplazar a FS_SEEK_BEGIN, comienzo del fichero
 		inodosx[fileDescriptor].posicion = 0;
 		return 0;
 
-	} else if (whence == bloques_inodos[array[0]].inodos[array[1]].size - 1) { // Desplazar a FS_SEEK_END, fin del fichero
+	} else if (whence == 1) { // Desplazar a FS_SEEK_END, fin del fichero
 		inodosx[fileDescriptor].posicion = bloques_inodos[array[0]].inodos[array[1]].size - 1;
 		return 0;
 
-	} else if(whence == inodosx[fileDescriptor].posicion){ 	// Caso FS_SEEK_CUR
+	} else if(whence == 0){ 	// Caso FS_SEEK_CUR
 		
 		if(inodosx[fileDescriptor].posicion + offset > bloques_inodos[array[0]].inodos[array[1]].size){
 
@@ -852,8 +853,40 @@ int closeFileIntegrity(int fileDescriptor)
  */
 int createLn(char *fileName, char *linkName)
 {
-	
-    return -1;
+	int b_id; 
+	int *inodo_id;
+
+	inodo_id = ialloc(); 		/*Función que nos identifica el primer inodo libre*/
+
+	if(inodo_id[0] < 0 || inodo_id[1] < 0){
+		return -2; // Fallo, no hay inodos libres
+	}
+
+	// Comprueba si el nombre ya está en uso
+	for (int i=0; i<BLOCKS_FOR_INODES; i++) {
+		for(int j=0; j<NUMBER_INODES_PER_BLOCK; j++){
+			// El nombre del link ya está en uso
+        	if(strcmp(linkName, bloques_inodos[i].inodos[j].nombre) == 0){ return -2;} 
+		}
+    }
+
+	int aux = -1;
+
+	// Comprobamos si el fichero a ser enlazado existe
+	for (int i=0; i<BLOCKS_FOR_INODES; i++) {
+		for(int j=0; j<NUMBER_INODES_PER_BLOCK; j++){
+			// El nombre del link ya está en uso
+        	if(strcmp(fileName, bloques_inodos[i].inodos[j].nombre) == 0){ aux = 0;} 
+		}
+    }
+
+	if (aux == -1) {return -1;} // No se puede enlazar al fichero puesto que no existe en el SF
+
+	strcpy(bloques_inodos[inodo_id[0]].inodos[inodo_id[1]].nombre, linkName);
+	bloques_inodos[inodo_id[0]].inodos[inodo_id[1]].tipo_enlace = 1; // Tipo fichero
+	strcpy(bloques_inodos[inodo_id[0]].inodos[inodo_id[1]].nombre_apuntado, fileName);
+
+	return 0;
 }
 
 /*

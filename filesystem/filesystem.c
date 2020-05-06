@@ -395,7 +395,6 @@ int unmountFS(void)
 	}
 
 	esta_montado = 0 ; // 0: falso, 1: verdadero. Desmontar
-
 	return 0;
 }
 
@@ -483,6 +482,17 @@ int openFile(char *fileName)
 
 	// Buscar el inodo asociado al nombre
 	inodo_id = namei(fileName);
+
+	if(inodo_id[0] < 0 || inodo_id[1] < 0){
+		return -1; // Fallo, el fichero no existe en el sistema
+	}
+
+	// Si el inodo es un enlace simbólico buscamos la referencia final.
+	// Hay que destacar que een este diseño no es posible hacer enlaces simbólicos que apunten a otros enlaces
+	if(bloques_inodos[inodo_id[0]].inodos[inodo_id[1]].tipo_enlace == 1){
+		char * nombreArchivo = bloques_inodos[inodo_id[0]].inodos[inodo_id[1]].nombre_apuntado;
+		inodo_id = namei(nombreArchivo); // El archivo final
+	}
 
 	if(inodo_id[0] < 0 || inodo_id[1] < 0){
 		return -1; // Fallo, el fichero no existe en el sistema
@@ -686,6 +696,17 @@ int checkFile (char * fileName)
 		return -2; // Fallo, el fichero no existe en el sistema
 	}
 
+	// Si el inodo es un enlace simbólico buscamos la referencia final.
+	// Hay que destacar que een este diseño no es posible hacer enlaces simbólicos que apunten a otros enlaces
+	if(bloques_inodos[inodo_id[0]].inodos[inodo_id[1]].tipo_enlace == 1){
+		char * nombreArchivo = bloques_inodos[inodo_id[0]].inodos[inodo_id[1]].nombre_apuntado;
+		inodo_id = namei(nombreArchivo); // El archivo final
+	}
+
+	if(inodo_id[0] < 0 || inodo_id[1] < 0){
+		return -2; // Fallo, el fichero no existe en el sistema
+	}
+
 	if(bloques_inodos[inodo_id[0]].inodos[inodo_id[1]].integridad_boolean == 0){
 		return -2; // Control de errores, se comprueba si la función tiene integridad
 	}
@@ -725,6 +746,17 @@ int includeIntegrity (char * fileName)
 
 	// Buscar el inodo asociado al nombre
 	inodo_id = namei(fileName);
+
+	if(inodo_id[0] < 0 || inodo_id[1] < 0){
+		return -1; // Fallo, el fichero no existe en el sistema
+	}
+
+	// Si el inodo es un enlace simbólico buscamos la referencia final.
+	// Hay que destacar que een este diseño no es posible hacer enlaces simbólicos que apunten a otros enlaces
+	if(bloques_inodos[inodo_id[0]].inodos[inodo_id[1]].tipo_enlace == 1){
+		char * nombreArchivo = bloques_inodos[inodo_id[0]].inodos[inodo_id[1]].nombre_apuntado;
+		inodo_id = namei(nombreArchivo); // El archivo final
+	}
 
 	if(inodo_id[0] < 0 || inodo_id[1] < 0){
 		return -1; // Fallo, el fichero no existe en el sistema
@@ -770,6 +802,17 @@ int openFileIntegrity(char *fileName)
 
 	// Buscar el inodo asociado al nombre
 	inodo_id = namei(fileName);
+
+	if(inodo_id[0] < 0 || inodo_id[1] < 0){
+		return -1; // Fallo, el fichero no existe en el sistema
+	}
+
+	// Si el inodo es un enlace simbólico buscamos la referencia final.
+	// Hay que destacar que een este diseño no es posible hacer enlaces simbólicos que apunten a otros enlaces
+	if(bloques_inodos[inodo_id[0]].inodos[inodo_id[1]].tipo_enlace == 1){
+		char * nombreArchivo = bloques_inodos[inodo_id[0]].inodos[inodo_id[1]].nombre_apuntado;
+		inodo_id = namei(nombreArchivo); // El archivo final
+	}
 
 	if(inodo_id[0] < 0 || inodo_id[1] < 0){
 		return -1; // Fallo, el fichero no existe en el sistema
@@ -861,7 +904,6 @@ int createLn(char *fileName, char *linkName)
 		for(int j=0; j<NUMBER_INODES_PER_BLOCK; j++){
 			// El nombre del link ya está en uso
         	if(strcmp(linkName, bloques_inodos[i].inodos[j].nombre) == 0){ 
-				printf("Holaaaaaa");
 				return -2;
 				} 
 		}
@@ -876,8 +918,14 @@ int createLn(char *fileName, char *linkName)
 		}
     }
 
+	// Comprobamos si el fichero a ser enlazado es un enlace simbólico
+	for (int i=0; i<BLOCKS_FOR_INODES; i++) {
+		for(int j=0; j<NUMBER_INODES_PER_BLOCK; j++){
+        	if(bloques_inodos[i].inodos[j].tipo_enlace == 1){  return -2;} 
+		}
+    }
+
 	if (aux == -1) {
-		printf("Holaaaaaa1");
 		return -1;// No se puede enlazar al fichero puesto que no existe en el SF
 	} 
 

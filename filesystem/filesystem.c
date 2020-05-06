@@ -1,3 +1,4 @@
+
 /*
  *
  * Operating System Design / Diseño de Sistemas Operativos
@@ -191,7 +192,7 @@ int * namei(char *fileName)
 	// Buscamos el inodo con el nombre fileName y devolvemos qué inodo es
 	for (int i=0; i<BLOCKS_FOR_INODES; i++) {
 		for(int j=0; j<NUMBER_INODES_PER_BLOCK; j++){
-			
+			//printf("%s ----- %s-> %i \n", fileName, bloques_inodos[i].inodos[j].nombre, strcmp(fileName, bloques_inodos[i].inodos[j].nombre));
         	if(strcmp(fileName, bloques_inodos[i].inodos[j].nombre) == 0){ 
 				//Asignamos los valores del array a devolver
 				bloque_buscar = i;
@@ -676,15 +677,10 @@ int lseekFile(int fileDescriptor, long offset, int whence)
 
 int checkFile (char * fileName)
 {	
-	//char * aux ="prueba crc";
-	//uint32_t val = CRC32(aux, strlen(aux));
-	//printf("%i", val);
-
 	int *inodo_id = malloc (sizeof(int)*2);
 
 	// Buscar el inodo asociado al nombre
 	inodo_id = namei(fileName);
-
 
 	if(inodo_id[0] < 0 || inodo_id[1] < 0){
 		return -2; // Fallo, el fichero no existe en el sistema
@@ -698,23 +694,18 @@ int checkFile (char * fileName)
 	
 	int posicion_antigua = inodosx[posicion].posicion;
 
-
 	if (inodosx[posicion].abierto == 1){ // Si el fichero está abiero no se se puede calcular integridad
 		return -2; // Control de errores
 	}
 
 	int size = bloques_inodos[inodo_id[0]].inodos[inodo_id[1]].size;
-	char buffer [size];
+	char *buffer = malloc (size);
 
-	// CUIDADO CON CHAR *
-
-	readFile(posicion, buffer, size);
+	if(readFile(posicion, buffer, size)==-1){return -1;}
 	inodosx[posicion].posicion = posicion_antigua;
 
 	// Se calcula la integridad de manera manual
-	//int integridad_calculada = 0;
-	//uint32_t integridad_calculada = CRC32(buffer, size); // NO USAR STRLEN
-	uint32_t integridad_calculada  = 0;
+	int integridad_calculada = CRC32((const unsigned char *)buffer, strlen(buffer));
 
 	if(bloques_inodos[inodo_id[0]].inodos[inodo_id[1]].integridad == integridad_calculada){
 		return 0;
@@ -743,7 +734,6 @@ int includeIntegrity (char * fileName)
 		return -2; // Control de errores, se comprueba si la función tiene integridad		
 	}
 	
-	//  SE DEBE CALCULAR INTEGRIDAD SI ESTÁ ABIERTO EL FICHERO???????
 	int posicion = computePositionInodeX(inodo_id);
 
 	if (inodosx[posicion].abierto == 1){ // Si el fichero está abiero no se se puede calcular integridad
@@ -751,13 +741,15 @@ int includeIntegrity (char * fileName)
 	}
 
 	int size = bloques_inodos[inodo_id[0]].inodos[inodo_id[1]].size;
-	char *buffer [size];
+	char *buffer = malloc (size);
+	int posicion_antigua = inodosx[posicion].posicion;
+		
+	if(readFile(posicion, buffer, size)==-1){return -1;}
 
-	readFile(posicion, buffer, size);
+	inodosx[posicion].posicion = posicion_antigua;
 
 	// Se calcula la integridad de manera manual
-	int integridad_calculada = 0;
-	//int integridad_calculada = CRC32(buffer, strlen(buffer));
+	int integridad_calculada = CRC32((const unsigned char *)buffer, strlen(buffer));
 
 	// Incluimos integridad
 	bloques_inodos[inodo_id[0]].inodos[inodo_id[1]].integridad = integridad_calculada;
@@ -765,7 +757,7 @@ int includeIntegrity (char * fileName)
 	//Ya hay integridad
 	bloques_inodos[inodo_id[0]].inodos[inodo_id[1]].integridad_boolean = 1;
 
-    return -2;
+    return 0;
 }
 
 /*
@@ -830,13 +822,16 @@ int closeFileIntegrity(int fileDescriptor)
 	}
 	
 	int size = bloques_inodos[inodo_id[0]].inodos[inodo_id[1]].size;
-	char *buffer [size];
+	char *buffer = malloc (size);
+	
+	int posicion_antigua = inodosx[fileDescriptor].posicion;
 
-	readFile(fileDescriptor, buffer, size);
+	if(readFile(fileDescriptor, buffer, size)==-1){return -1;}
+	inodosx[fileDescriptor].posicion = posicion_antigua;
 
 	// Se calcula la integridad de manera manual
-	int integridad_calculada = 0;
-	//int integridad_calculada = CRC32(buffer, strlen(buffer));
+	int integridad_calculada = CRC32((const unsigned char *)buffer, strlen(buffer));
+
 	// Se actualiza la integridad
 	bloques_inodos[inodo_id[0]].inodos[inodo_id[1]].integridad = integridad_calculada;
 	

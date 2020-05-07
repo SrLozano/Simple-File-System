@@ -383,6 +383,10 @@ int createFile(char *fileName)
 	int *inodo_id;
 
 	inodo_id = ialloc(); 		/*Función que nos identifica el primer inodo libre*/
+	
+	if(strlen(fileName)>32){
+		return 2; // Control de errores, longitud máxima del fichero
+	}
 
 	if(inodo_id[0] < 0 || inodo_id[1] < 0){
 		return -2; // Fallo, no hay inodos libres
@@ -430,6 +434,10 @@ int removeFile(char *fileName)
 		return -1; // Fallo, el fichero no existe en el sistema
 	}
 
+	if(bloques_inodos[array[0]].inodos[array[1]].tipo_enlace == 1){ // Si es tipo enlace abrimos lo que esté apuntado
+		return -2;
+	}
+
 	int posicion = computePositionInodeX(array);
 
 	if (inodosx[posicion].abierto == 1){ // Si el fichero está abiero no se puede eliminar.
@@ -462,6 +470,10 @@ int openFile(char *fileName)
 		return -1; // Fallo, el fichero no existe en el sistema
 	}
 
+	if(bloques_inodos[inodo_id[0]].inodos[inodo_id[1]].tipo_enlace == 1){ // Si es tipo enlace abrimos lo que esté apuntado
+		return openFile(bloques_inodos[inodo_id[0]].inodos[inodo_id[1]].nombre_apuntado);
+	}
+
 	int posicion = computePositionInodeX(inodo_id);
 
 	if(inodosx[posicion].abierto == 1){
@@ -486,6 +498,14 @@ int closeFile(int fileDescriptor)
 	if((fileDescriptor < 0) || (fileDescriptor > NUMINODO-1)){
 		return -1;
 	}
+
+	int *array = malloc (sizeof(int)*2);
+	array = computePositionInodeMap(fileDescriptor); // Calculamos la posición dentro de nuestro sistema de ficheros
+
+	// Como open únicamente abre el fichero apuntado, nunca se abrirá un enlace simbólico y por tanto no se pueden cerrar enlaces simbólico
+	if(bloques_inodos[array[0]].inodos[array[1]].tipo_enlace == 1){
+		return -1;
+	}	
 	
 	// Terminar sesion de trabajo
 	inodosx[fileDescriptor].abierto = 0;
@@ -505,6 +525,10 @@ int readFile(int fileDescriptor, void *buffer, int numBytes)
 
 	int *array = malloc (sizeof(int)*2);
 	array = computePositionInodeMap(fileDescriptor); // Calculamos la posición dentro de nuestro sistema de ficheros
+	
+	if(array[0] < 0 || array[1] < 0){
+		return -1; // Fallo, el fichero no existe en el sistema
+	}
 
 	// Si el inodo es un enlace simbólico buscamos la referencia final.
 	// Hay que destacar que een este diseño no es posible hacer enlaces simbólicos que apunten a otros enlaces
@@ -562,6 +586,10 @@ int writeFile(int fileDescriptor, void *buffer, int numBytes)
 
 	int *array = malloc (sizeof(int)*2);
 	array = computePositionInodeMap(fileDescriptor); // Calculamos la posición dentro de nuestro sistema de ficheros
+	
+	if(array[0] < 0 || array[1] < 0){
+		return -1; // Fallo, el fichero no existe en el sistema
+	}
 
 	// Si el inodo es un enlace simbólico buscamos la referencia final.
 	// Hay que destacar que een este diseño no es posible hacer enlaces simbólicos que apunten a otros enlaces
@@ -639,6 +667,7 @@ int lseekFile(int fileDescriptor, long offset, int whence)
 	if(bloques_inodos[array[0]].inodos[array[1]].tipo_enlace == 1){
 		char * nombreArchivo = bloques_inodos[array[0]].inodos[array[1]].nombre_apuntado;
 		array = namei(nombreArchivo); // El archivo final
+		fileDescriptor = computePositionInodeX(array);
 	}
 
 	if(array[0] < 0 || array[1] < 0){
@@ -854,15 +883,9 @@ int closeFileIntegrity(int fileDescriptor)
 		return -1; // Fallo, el fichero no existe en el sistema
 	}
 
-	// Si el inodo es un enlace simbólico buscamos la referencia final.
-	// Hay que destacar que en este diseño no es posible hacer enlaces simbólicos que apunten a otros enlaces
+	// Como open únicamente abre el fichero apuntado, nunca se abrirá un enlace simbólico y por tanto no se pueden cerrar enlaces simbólico
 	if(bloques_inodos[inodo_id[0]].inodos[inodo_id[1]].tipo_enlace == 1){
-		char * nombreArchivo = bloques_inodos[inodo_id[0]].inodos[inodo_id[1]].nombre_apuntado;
-		inodo_id = namei(nombreArchivo); // El archivo final
-	}
-
-	if(inodo_id[0] < 0 || inodo_id[1] < 0){
-		return -1; // Fallo, el fichero no existe en el sistema
+		return -1;
 	}
 
 	// Comprobamos si tiene integridad
@@ -898,6 +921,10 @@ int closeFileIntegrity(int fileDescriptor)
 int createLn(char *fileName, char *linkName)
 {
 	int *inodo_id;
+
+	if(strlen(fileName)>32){
+		return 2; // Control de errores, longitud máxima del fichero
+	}
 
 	inodo_id = ialloc(); 		/*Función que nos identifica el primer inodo libre*/
 

@@ -211,13 +211,16 @@ int * namei(char *fileName)
  * @brief 	Search the associated block given a file descriptor and an offset
  * @return 	block if success, -1 otherwise.
  */
-int bmap(int inodo_id, int offset)
-{
+int * bmap(int inodo_id, int offset)
+{	
+	int *array_ret = malloc (sizeof(int)*2);
 	int bloque_logico;
 
 	// Comprobar validez de inodo_id
 	if (inodo_id > superbloque[0].numInodos){
-		return -1;
+		array_ret[0] = -1;
+		array_ret[1] = -1; 
+		return array_ret;
 	}
 
 	// Buscar bloque lógico de datos asociado
@@ -229,9 +232,13 @@ int bmap(int inodo_id, int offset)
 
 	// Devolver la referencia añ bloque directo para saber de cuál estamos hablando
 	if (bloque_logico >= 0 || bloque_logico < NUMBER_DIRECT_BLOCKS){ // Devolveremos el bloque directo que se encuentre dentro de los límites
-		return bloques_inodos[array[0]].inodos[array[1]].bloqueDirecto[bloque_logico];
+		array_ret[0] = bloques_inodos[array[0]].inodos[array[1]].bloqueDirecto[bloque_logico];
+		array_ret[1] = bloque_logico;
+		return array_ret;
 	}else{
-		return -1; // Error
+		array_ret[0] = -1;
+		array_ret[1] = -1; 
+		return array_ret; // Error
 	}
 }
 
@@ -525,7 +532,8 @@ int closeFile(int fileDescriptor)
 int readFile(int fileDescriptor, void *buffer, int numBytes)
 {	
 	char b[BLOCK_SIZE]; // Reserva de espacio para lo que vamos a leer
-	int b_id;
+	int *b_id = malloc (sizeof(int)*2);
+
 
 	int *array = malloc (sizeof(int)*2);
 	array = computePositionInodeMap(fileDescriptor); // Calculamos la posición dentro de nuestro sistema de ficheros
@@ -568,10 +576,10 @@ int readFile(int fileDescriptor, void *buffer, int numBytes)
 		resto_size = numBytes - resto_leer_del_bloque; // 2048 - 2047 -> resto_size
 		int a_leer =  (resto_size <= 0) ? numBytes :resto_leer_del_bloque; //Esto es si se cumple pilla size y si no resto_size
 		b_id = bmap(fileDescriptor, inodosx[fileDescriptor].posicion); // Saber cual es el bloque asociado. Dado un descriptor de fichero y un offset te devuelve el bloque asociado
-		if(b_id == -1){
+		if(b_id[0] == -1){
 			return -1; // Control de errores. 
 		}
-		bread(DEVICE_IMAGE, b_id, b);
+		bread(DEVICE_IMAGE, b_id[0], b);
 		memmove(buffer, b+bloque_offset, a_leer); // Mueve desde posición mas b, a_leer bytes a buffer
 		inodosx[fileDescriptor].posicion += a_leer;
 		buffer = (char *) buffer + a_leer;
@@ -586,7 +594,7 @@ int readFile(int fileDescriptor, void *buffer, int numBytes)
 int writeFile(int fileDescriptor, void *buffer, int numBytes)
 {	
 	char b[BLOCK_SIZE]; // Reserva de espacio para lo que vamos a escribir
-	int b_id;
+	int *b_id = malloc (sizeof(int)*2);
 
 	int *array = malloc (sizeof(int)*2);
 	array = computePositionInodeMap(fileDescriptor); // Calculamos la posición dentro de nuestro sistema de ficheros
@@ -629,19 +637,19 @@ int writeFile(int fileDescriptor, void *buffer, int numBytes)
 		
 
 		b_id = bmap(fileDescriptor, inodosx[fileDescriptor].posicion); // Saber cual es el bloque asociado. Dado un descriptor de fichero y un offset te devuelve el bloque asociado
-		if(b_id == -1){
+		if(b_id[0] == -1){
 			return -1; // Control de errores. 
 		}
-		if(b_id == -3){ // El bloque directo aún no ha sido inicializado
+		if(b_id[0] == -3){ // El bloque directo aún no ha sido inicializado
 			int block_allocated = alloc();
 			int *array = malloc (sizeof(int)*2);
 			array = computePositionInodeMap(block_allocated); // Calculamos la posición dentro de nuestro sistema de ficheros
-			bloques_inodos[array[0]].inodos[array[1]].bloqueDirecto[0] = block_allocated; // ESTO NO SERÁ 0, SERÁ OTRA COSA
+			bloques_inodos[array[0]].inodos[array[1]].bloqueDirecto[b_id[1]] = block_allocated; // ESTO NO SERÁ 0, SERÁ OTRA COSA
 		}
-		bread(DEVICE_IMAGE, b_id, b);
+		bread(DEVICE_IMAGE, b_id[0], b);
 		memmove(b+bloque_offset, buffer, a_leer); // Mueve desde posición mas b, a_leer bytes a buffer
-		bwrite(DEVICE_IMAGE, b_id, b);            // Hay que volver a escribir en disco
-		bread(DEVICE_IMAGE, b_id, b);
+		bwrite(DEVICE_IMAGE, b_id[0], b);            // Hay que volver a escribir en disco
+		bread(DEVICE_IMAGE, b_id[0], b);
 		inodosx[fileDescriptor].posicion += a_leer;
 		buffer = (char *) buffer + a_leer;
 

@@ -52,7 +52,7 @@ int main()
 
 	/////// CREATE FILE /////////
 
-	ret = createFile("/test.txt");
+	ret = createFile("/test1290e091920e09e0920eij23jkwenk1jwdsiqerjrkkkkjrekjejlslksklklskdjw.txt");
 	if (ret != 0)
 	{
 		fprintf(stdout, "%s%s%s%s%s", ANSI_COLOR_BLUE, "TEST createFile ", ANSI_COLOR_RED, "FAILED\n", ANSI_COLOR_RESET);
@@ -60,7 +60,7 @@ int main()
 	}
 	fprintf(stdout, "%s%s%s%s%s", ANSI_COLOR_BLUE, "TEST createFile ", ANSI_COLOR_GREEN, "SUCCESS\n", ANSI_COLOR_RESET);
 
-
+/*
 	/////// CLOSE FILE /////////
 
 	ret = closeFile(0); // El archivo se debe haber creado en el primer inodo libre
@@ -207,16 +207,6 @@ int main()
 	}
 	fprintf(stdout, "%s%s%s%s%s", ANSI_COLOR_BLUE, "TEST createLn ", ANSI_COLOR_GREEN, "SUCCESS\n", ANSI_COLOR_RESET);
 
-	/////// CREAR ENLACE SIMBOLICO A ENLACE SIMBOLICO ////
-	/*
-	ret = createLn("enlace", "enlaceAenlace");
-	if (ret < 0) // 
-	{	
-		fprintf(stdout, "%s%s%s%s%s", ANSI_COLOR_BLUE, "TEST createLn ", ANSI_COLOR_RED, "FAILED\n", ANSI_COLOR_RESET);
-		return -1;
-	}
-	fprintf(stdout, "%s%s%s%s%s", ANSI_COLOR_BLUE, "TEST createLn ", ANSI_COLOR_GREEN, "SUCCESS\n", ANSI_COLOR_RESET);
-	*/
 
 	/////// ELIMINAR ENLACE SIMBOLICO ////
 	ret = removeLn("enlace");
@@ -247,7 +237,7 @@ int main()
 		return -1;
 	}
 	fprintf(stdout, "%s%s%s%s%s", ANSI_COLOR_BLUE, "TEST removeFile ", ANSI_COLOR_GREEN, "SUCCESS\n", ANSI_COLOR_RESET);
-
+*/	
 	////// UNMOUNT /////////
 	ret = unmountFS();
 	if (ret != 0)

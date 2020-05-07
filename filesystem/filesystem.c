@@ -506,6 +506,10 @@ int closeFile(int fileDescriptor)
 	if(bloques_inodos[array[0]].inodos[array[1]].tipo_enlace == 1){
 		return -1;
 	}	
+
+	if(bloques_inodos[array[0]].inodos[array[1]].integridad_boolean == 1){
+		return -1; // Control de errores, se comprueba si el fichero tiene integridad		
+	}
 	
 	// Terminar sesion de trabajo
 	inodosx[fileDescriptor].abierto = 0;

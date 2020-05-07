@@ -36,8 +36,6 @@ struct Superblock;
 
 typedef struct TipoSuperbloque{
     unsigned int numMagico;	                   /* Número mágico del superbloque: 0x000D5500 */
-    //unsigned int numBloquesMapaInodos;         /* Número de bloques del mapa inodos */
-    //unsigned int numBloquesMapaDatos;          /* Número de bloques del mapa  datos */
     unsigned int numInodos; 	                 /* Número de inodos en el dispositivo */
     unsigned int primerInodo;	                 /* Número del bloque del 1º inodo del disp. (inodo raíz) */
     unsigned int numBloquesDatos;              /* Número de bloques de datos en el disp. */

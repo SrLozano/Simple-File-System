@@ -1,4 +1,3 @@
-
 /*
  *
  * Operating System Design / Diseño de Sistemas Operativos
@@ -192,7 +191,6 @@ int * namei(char *fileName)
 	// Buscamos el inodo con el nombre fileName y devolvemos qué inodo es
 	for (int i=0; i<BLOCKS_FOR_INODES; i++) {
 		for(int j=0; j<NUMBER_INODES_PER_BLOCK; j++){
-			//printf("%s ----- %s-> %i \n", fileName, bloques_inodos[i].inodos[j].nombre, strcmp(fileName, bloques_inodos[i].inodos[j].nombre));
         	if(strcmp(fileName, bloques_inodos[i].inodos[j].nombre) == 0){ 
 				//Asignamos los valores del array a devolver
 				bloque_buscar = i;
@@ -252,8 +250,6 @@ int mkFS(long deviceSize)
 	//Inicializar valores por defecto
 	superbloque[0].numMagico = 100383511; 
 	superbloque[0].numInodos = NUMINODO;
-	//superbloque[0].numBloquesMapaInodos = 1; 			// Un bloque es suficiente para almacenar 48 inodos
-    //superbloque[0].numBloquesMapaDatos  = 1; 			// Un bloque es suficiente para almacenar los bloques correspondientes al tamanyo maximo de disco
     superbloque[0].primerInodo          = 2; 			// Número que indica el bloque del primer inodo
     int numero_bloques_datos = (deviceSize/BLOCK_SIZE) - 3; // Número de bloques menos super, i-nodo, mapasn
 	superbloque[0].numBloquesDatos      = numero_bloques_datos;
@@ -318,17 +314,7 @@ int mountFS(void)
 	
 	// Comprobamos si el FS a montar es el que nosotros queremos
 	if (superbloque[0].numMagico != 100383511) return -1;
-	/*
-	// Leer del disco [bloque 1] los bloques del mapa de inodos. Solo hay uno pero el for generaliza
-	for (int i=0; i<superbloque[0].numBloquesMapaInodos; i++){
-		if (bread(DEVICE_IMAGE, 1+i, (char *)superbloque[0].i_map + i*BLOCK_SIZE) == -1) return -1;
-	}
-	
-	// Leer del disco [bloque 2] los bloques del mapa de bloques de datos. Solo hay uno pero el for generaliza
-	for (int i=0; i<superbloque[0].numBloquesMapaDatos; i++){
-		if (bread(DEVICE_IMAGE, 1 + superbloque[0].numBloquesMapaInodos + i, (char *)superbloque[0].b_map + i*BLOCK_SIZE) == -1) return -1;
-	}
-	*/
+
 	// Leer los i-nodos a disco 
     for (int i=0; i<BLOCKS_FOR_INODES; i++) {
           if (bread(DEVICE_IMAGE, i + superbloque[0].primerInodo, ((char *)bloques_inodos + i*BLOCK_SIZE)) == -1) return -1;
@@ -352,17 +338,6 @@ int my_sync(void)
 	// Escribir superbloque al disco [bloque 0]
 	if (bwrite(DEVICE_IMAGE, 0, (char *)&superbloque[0]) == -1) return -1;
 
-/*
-	// Escribir los bloques del mapa de inodos [bloque 1] Solo hay uno pero el for generaliza
-	for (int i=0; i<superbloque[0].numBloquesMapaInodos; i++){
-		if (bwrite(DEVICE_IMAGE, 1+i, (char *)superbloque[0].i_map + i*BLOCK_SIZE) == -1) return -1;
-	}
-
-	// Escribir los bloques del mapa de bloques de datos [bloque 2] Solo hay uno pero el for generaliza
-	for (int i=0; i<superbloque[0].numBloquesMapaDatos; i++){
-		if (bwrite(DEVICE_IMAGE, 1 + superbloque[0].numBloquesMapaInodos + i, (char *)superbloque[0].b_map + i*BLOCK_SIZE) == -1) return -1;
-	}
-*/
 	// Escribir los i-nodos a disco 
     for (int i=0; i<BLOCKS_FOR_INODES; i++) {
           if (bwrite(DEVICE_IMAGE, i + superbloque[0].primerInodo, ((char *)bloques_inodos + i*BLOCK_SIZE)) == -1) return -1;
@@ -487,17 +462,6 @@ int openFile(char *fileName)
 		return -1; // Fallo, el fichero no existe en el sistema
 	}
 
-	// Si el inodo es un enlace simbólico buscamos la referencia final.
-	// Hay que destacar que een este diseño no es posible hacer enlaces simbólicos que apunten a otros enlaces
-	if(bloques_inodos[inodo_id[0]].inodos[inodo_id[1]].tipo_enlace == 1){
-		char * nombreArchivo = bloques_inodos[inodo_id[0]].inodos[inodo_id[1]].nombre_apuntado;
-		inodo_id = namei(nombreArchivo); // El archivo final
-	}
-
-	if(inodo_id[0] < 0 || inodo_id[1] < 0){
-		return -1; // Fallo, el fichero no existe en el sistema
-	}
-
 	int posicion = computePositionInodeX(inodo_id);
 
 	if(inodosx[posicion].abierto == 1){
@@ -542,14 +506,23 @@ int readFile(int fileDescriptor, void *buffer, int numBytes)
 	int *array = malloc (sizeof(int)*2);
 	array = computePositionInodeMap(fileDescriptor); // Calculamos la posición dentro de nuestro sistema de ficheros
 
+	// Si el inodo es un enlace simbólico buscamos la referencia final.
+	// Hay que destacar que een este diseño no es posible hacer enlaces simbólicos que apunten a otros enlaces
+	if(bloques_inodos[array[0]].inodos[array[1]].tipo_enlace == 1){
+		char * nombreArchivo = bloques_inodos[array[0]].inodos[array[1]].nombre_apuntado;
+		array = namei(nombreArchivo); // El archivo final
+	}
+
+	if(array[0] < 0 || array[1] < 0){
+		return -1; // Fallo, el fichero no existe en el sistema
+	}
+	
+
 	if(inodosx[fileDescriptor].posicion + numBytes > bloques_inodos[array[0]].inodos[array[1]].size){
 
 		/*  Si el puntero al fichero más lo que hay que leer es ya mayor que lo que de verdad contiene el fichero,
 			comprobaremos ya cuánto se puede leer como máximo */
 		numBytes = bloques_inodos[array[0]].inodos[array[1]].size - inodosx[fileDescriptor].posicion; // Lo que aún puedo leer
-		printf("NumBytes es: %i\n", numBytes);
-		printf("La primera parte es: %i\n", bloques_inodos[array[0]].inodos[array[1]].size);
-		printf("La segunda parte es: %i\n", inodosx[fileDescriptor].posicion);
 	}
 
 	if(numBytes == 0){
@@ -590,15 +563,23 @@ int writeFile(int fileDescriptor, void *buffer, int numBytes)
 	int *array = malloc (sizeof(int)*2);
 	array = computePositionInodeMap(fileDescriptor); // Calculamos la posición dentro de nuestro sistema de ficheros
 
+	// Si el inodo es un enlace simbólico buscamos la referencia final.
+	// Hay que destacar que een este diseño no es posible hacer enlaces simbólicos que apunten a otros enlaces
+	if(bloques_inodos[array[0]].inodos[array[1]].tipo_enlace == 1){
+		char * nombreArchivo = bloques_inodos[array[0]].inodos[array[1]].nombre_apuntado;
+		array = namei(nombreArchivo); // El archivo final
+	}
+
+	if(array[0] < 0 || array[1] < 0){
+		return -1; // Fallo, el fichero no existe en el sistema
+	}
+
 	if(inodosx[fileDescriptor].posicion + numBytes > 5*BLOCK_SIZE){ //Mayor que tamaño max del fichero
 
 		/*  Si el puntero al fichero más lo que hay que escribir es ya mayor que lo que de verdad contiene el fichero,
 			comprobaremos ya cuánto se puede escribir como máximo */
 		numBytes = 5*BLOCK_SIZE - inodosx[fileDescriptor].posicion; // Lo que aún puedo leer
 	}
-		//printf("NumBytes es: %i\n", numBytes);
-		//printf("La primera parte es: %i\n", bloques_inodos[array[0]].inodos[array[1]].size);
-		//printf("La segunda parte es: %i\n", inodosx[fileDescriptor].posicion);
 	if(numBytes == 0){
 		return 0; // Devolvemos 0 porque el puntero de posición está al final del fichero
 	}else if(numBytes < 0){
@@ -629,7 +610,6 @@ int writeFile(int fileDescriptor, void *buffer, int numBytes)
 		memmove(b+bloque_offset, buffer, a_leer); // Mueve desde posición mas b, a_leer bytes a buffer
 		bwrite(DEVICE_IMAGE, b_id, b);            // Hay que volver a escribir en disco
 		bread(DEVICE_IMAGE, b_id, b);
-		//printf("El bloque escrito es:%s" , b);
 		inodosx[fileDescriptor].posicion += a_leer;
 		buffer = (char *) buffer + a_leer;
 
@@ -654,6 +634,17 @@ int lseekFile(int fileDescriptor, long offset, int whence)
 	int *array = malloc (sizeof(int)*2);
 	array = computePositionInodeMap(fileDescriptor); // Calculamos la posición dentro de nuestro sistema de ficheros
 
+	// Si el inodo es un enlace simbólico buscamos la referencia final.
+	// Hay que destacar que en este diseño no es posible hacer enlaces simbólicos que apunten a otros enlaces
+	if(bloques_inodos[array[0]].inodos[array[1]].tipo_enlace == 1){
+		char * nombreArchivo = bloques_inodos[array[0]].inodos[array[1]].nombre_apuntado;
+		array = namei(nombreArchivo); // El archivo final
+	}
+
+	if(array[0] < 0 || array[1] < 0){
+		return -1; // Fallo, el fichero no existe en el sistema
+	}
+
 	if(whence == 2){ // Desplazar a FS_SEEK_BEGIN, comienzo del fichero
 		inodosx[fileDescriptor].posicion = 0;
 		return 0;
@@ -664,7 +655,7 @@ int lseekFile(int fileDescriptor, long offset, int whence)
 
 	} else if(whence == 0){ 	// Caso FS_SEEK_CUR
 		
-		if(inodosx[fileDescriptor].posicion + offset > bloques_inodos[array[0]].inodos[array[1]].size){
+		if(inodosx[fileDescriptor].posicion + offset > bloques_inodos[array[0]].inodos[array[1]].size || inodosx[fileDescriptor].posicion + offset < 0){
 
 			/*  Si el puntero al fichero más lo que hay que desplazar es ya mayor que lo que de verdad contiene el fichero,
 				se sale fuera de los límites y error */
@@ -859,6 +850,21 @@ int closeFileIntegrity(int fileDescriptor)
 	int *inodo_id = malloc (sizeof(int)*2);
 	inodo_id = computePositionInodeMap(fileDescriptor);
 
+	if(inodo_id[0] < 0 || inodo_id[1] < 0){
+		return -1; // Fallo, el fichero no existe en el sistema
+	}
+
+	// Si el inodo es un enlace simbólico buscamos la referencia final.
+	// Hay que destacar que en este diseño no es posible hacer enlaces simbólicos que apunten a otros enlaces
+	if(bloques_inodos[inodo_id[0]].inodos[inodo_id[1]].tipo_enlace == 1){
+		char * nombreArchivo = bloques_inodos[inodo_id[0]].inodos[inodo_id[1]].nombre_apuntado;
+		inodo_id = namei(nombreArchivo); // El archivo final
+	}
+
+	if(inodo_id[0] < 0 || inodo_id[1] < 0){
+		return -1; // Fallo, el fichero no existe en el sistema
+	}
+
 	// Comprobamos si tiene integridad
 	if(bloques_inodos[inodo_id[0]].inodos[inodo_id[1]].integridad_boolean == 0){
 		return -1; // Control de errores, se comprueba si la función tiene integridad
@@ -930,7 +936,7 @@ int createLn(char *fileName, char *linkName)
 	} 
 
 	strcpy(bloques_inodos[inodo_id[0]].inodos[inodo_id[1]].nombre, linkName);
-	bloques_inodos[inodo_id[0]].inodos[inodo_id[1]].tipo_enlace = 1; // Tipo fichero
+	bloques_inodos[inodo_id[0]].inodos[inodo_id[1]].tipo_enlace = 1; // Tipo enlace
 	strcpy(bloques_inodos[inodo_id[0]].inodos[inodo_id[1]].nombre_apuntado, fileName);
 
 	return 0;

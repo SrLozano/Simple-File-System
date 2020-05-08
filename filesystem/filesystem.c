@@ -392,7 +392,7 @@ int createFile(char *fileName)
 	inodo_id = ialloc(); 		/*Función que nos identifica el primer inodo libre*/
 	
 	if(strlen(fileName)>32){
-		return 2; // Control de errores, longitud máxima del fichero
+		return -2; // Control de errores, longitud máxima del fichero
 	}
 
 	if(inodo_id[0] < 0 || inodo_id[1] < 0){
@@ -479,6 +479,10 @@ int openFile(char *fileName)
 
 	if(bloques_inodos[inodo_id[0]].inodos[inodo_id[1]].tipo_enlace == 1){ // Si es tipo enlace abrimos lo que esté apuntado
 		return openFile(bloques_inodos[inodo_id[0]].inodos[inodo_id[1]].nombre_apuntado);
+	}
+
+	if(bloques_inodos[inodo_id[0]].inodos[inodo_id[1]].integridad_boolean == 1){
+		return -2; // Control de errores, se comprueba si el fichero tiene integridad		
 	}
 
 	int posicion = computePositionInodeX(inodo_id);
@@ -935,7 +939,7 @@ int createLn(char *fileName, char *linkName)
 	int *inodo_id;
 
 	if(strlen(fileName)>32){
-		return 2; // Control de errores, longitud máxima del fichero
+		return -2; // Control de errores, longitud máxima del fichero
 	}
 
 	inodo_id = ialloc(); 		/*Función que nos identifica el primer inodo libre*/

@@ -1,9 +1,9 @@
-# A simple file system 
+# A simple file system 🤖🗂
 Development of a file system in user space written in C. The project consists of the creation of the file system architecture, including all the necessary control structures (i-nodes, superblock, etc) in user space. Some code it's provided by the professors of our university.
 
-**Authors of the project**: Mario Lozano Cortés and Enrique Lozano Cebriano 
+**Authors of the project**: Mario Lozano Cortés and Enrique Lozano Cebriano 📚💻
 
-## Run it
+## Run it ⚙️
 
 Use the makefile 
 
@@ -13,7 +13,7 @@ make
 ./test
 ```
 
-## The logic behind
+## The logic behind 🧠
 
 Next, we will define the structures, data and algorithms on which the file system is based. Initially, we must carry out a study on the parameters handled by the system, in this way we will be able to have a global image and obtain a structure that works as a file system. Later, we will emphasize the differential factors that optimize the system. After the mentioned study we defined the following structure of disc, which we will happen to define next.
 
